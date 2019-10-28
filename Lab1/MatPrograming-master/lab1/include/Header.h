@@ -1,0 +1,8 @@
+#include "NR.h"
+#include "Point.h"
+#include "Matrix.h"
+#include "MatrixDeterminantSolver.h"
+#include "MatrixInverseSolver.h"
+#include "MatrixSylvesterTest.h"
+#include "SimplePolynomial.h"
+#include "SimplePolynomialRealRootsBoundariesSolver.h"
