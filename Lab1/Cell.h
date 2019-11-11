@@ -24,7 +24,7 @@ protected:
         return type >= 0 && type <= 3;
     }
 
-    std::vector<Cell<T>> neighbors;
+    std::vector<Cell<T>*> neighbors;
 public:
 
     using Point<T>::Point;
@@ -127,12 +127,12 @@ public:
         return (*this);
     }
 
-    void addNeighbor(Cell<T>& neighbor) {
+    void addNeighbor(Cell<T>* neighbor) {
         this->neighbors.push_back(neighbor);
     }
 
     Cell<T>& getNeighbor(int index) {
-        return this->neighbors[index];
+        return *(this->neighbors[index]);
     }
 };
 

@@ -72,53 +72,53 @@ template <class T>
             curLayer[i][j][nz-1] = Cell<T>(paramCount, 0.0, 0);
         }
     }
-    Cell<T> nullCell = Cell<T>(paramCount, 0.0, 1);
+    Cell<T>& nullCell = *(new Cell<T>(paramCount, 0.0, 1));
       for(int i = 0; i < nx; i++) {
           for (int j = 0; j < ny; j++) {
               for (int k = 0; k < nz; k++) {
                   Cell<T>& cell = curLayer[i][j][k];
                   if (!cell.isBorder()) {
-                      cell.addNeighbor(curLayer[i - 1][j][k]);
-                      cell.addNeighbor(curLayer[i + 1][j][k]);
+                      cell.addNeighbor(&(curLayer[i - 1][j][k]));
+                      cell.addNeighbor(&(curLayer[i + 1][j][k]));
 
-                      cell.addNeighbor(curLayer[i][j - 1][k]);
-                      cell.addNeighbor(curLayer[i][j + 1][k]);
+                      cell.addNeighbor(&(curLayer[i][j - 1][k]));
+                      cell.addNeighbor(&(curLayer[i][j + 1][k]));
 
-                      cell.addNeighbor(curLayer[i][j][k - 1]);
-                      cell.addNeighbor(curLayer[i][j][k + 1]);
+                      cell.addNeighbor(&(curLayer[i][j][k - 1]));
+                      cell.addNeighbor(&(curLayer[i][j][k + 1]));
                   } else {
                       if (i == 0) {
-                          cell.addNeighbor(nullCell);
-                          cell.addNeighbor(curLayer[i + 1][j][k]);
+                          cell.addNeighbor(&nullCell);
+                          cell.addNeighbor(&(curLayer[i + 1][j][k]));
                       } else if (i == nx - 1) {
-                          cell.addNeighbor(curLayer[i - 1][j][k]);
-                          cell.addNeighbor(nullCell);
+                          cell.addNeighbor(&(curLayer[i - 1][j][k]));
+                          cell.addNeighbor(&nullCell);
                       } else {
-                          cell.addNeighbor(curLayer[i - 1][j][k]);
-                          cell.addNeighbor(curLayer[i + 1][j][k]);
+                          cell.addNeighbor(&(curLayer[i - 1][j][k]));
+                          cell.addNeighbor(&(curLayer[i + 1][j][k]));
                       }
 
                       if (j == 0) {
-                          cell.addNeighbor(nullCell);
-                          cell.addNeighbor(curLayer[i][j + 1][k]);
+                          cell.addNeighbor(&nullCell);
+                          cell.addNeighbor(&(curLayer[i][j + 1][k]));
                       } else if (j == ny - 1) {
-                          cell.addNeighbor(curLayer[i][j - 1][k]);
-                          cell.addNeighbor(nullCell);
+                          cell.addNeighbor(&(curLayer[i][j - 1][k]));
+                          cell.addNeighbor(&nullCell);
                       } else {
-                          cell.addNeighbor(curLayer[i][j - 1][k]);
-                          cell.addNeighbor(curLayer[i][j + 1][k]);
+                          cell.addNeighbor(&(curLayer[i][j - 1][k]));
+                          cell.addNeighbor(&(curLayer[i][j + 1][k]));
                       }
 
                       if (k == 0) {
-                          cell.addNeighbor(nullCell);
-                          cell.addNeighbor(curLayer[i][j][k + 1]);
+                          cell.addNeighbor(&nullCell);
+                          cell.addNeighbor(&(curLayer[i][j][k + 1]));
                       } else if (k == nz - 1) {
-                          cell.addNeighbor(curLayer[i][j][k - 1]);
-                          cell.addNeighbor(nullCell);
+                          cell.addNeighbor(&(curLayer[i][j][k - 1]));
+                          cell.addNeighbor(&nullCell);
                       } else {
                           Cell<T>& zero = curLayer[0][0][0];
-                          cell.addNeighbor(curLayer[i][j][k - 1]);
-                          cell.addNeighbor(curLayer[i][j][k + 1]);
+                          cell.addNeighbor(&(curLayer[i][j][k - 1]));
+                          cell.addNeighbor(&(curLayer[i][j][k + 1]));
                       }
                   }
               }
