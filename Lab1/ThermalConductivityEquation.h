@@ -286,7 +286,7 @@ T* accumulateSum(T* acc, const T& a, T* arr, int n) {
 }
 
 template<class T>
-void gasDynamic(Cell<T>*** cells,
+void thermalDynamic(Cell<T>*** cells,
                 long int nx, long int ny, long int nz,
                 T hx, T hy, T hz,
                 T tau, T t0, T t1,
@@ -307,6 +307,97 @@ void gasDynamic(Cell<T>*** cells,
             for(int j = 0; j < ny; j++) {
                 for(int k = 0; k < nz; k++) {
                     Cell<T>& cell = cells[i][j][k];
+
+                    Point<T> F1 = (cell - cell.getNeighbor(0))*koeffX;
+                    Point<T> F2 = (cell.getNeighbor(1) - cell)*koeffX;
+
+                    Point<T> G1 = (cell - cell.getNeighbor(2))*koeffY;
+                    Point<T> G2 = (cell.getNeighbor(3) - cell)*koeffY;
+
+                    Point<T> H1 = (cell - cell.getNeighbor(4))*koeffZ;
+                    Point<T> H2 = (cell.getNeighbor(5) - cell)*koeffZ;
+
+                    cell.getNeighbor(0)+=F1;
+                    cell.getNeighbor(1)-=F2;
+
+                    cell.getNeighbor(2)+=G1;
+                    cell.getNeighbor(3)-=G2;
+
+                    cell.getNeighbor(4)+=H1;
+                    cell.getNeighbor(5)-=H2;
+                }
+            }
+        }
+    }
+}
+
+template<class T>
+Point<T>& getF(Cell<Point<T>> cell) {
+    Point<T> F = Point<T>(cell[0].length());
+    F[0] = cell[0][1];
+    F[1] = pow(F[0],2)/cell[0][0] + cell[0][5];
+    F[2] = F[0]*cell[0][2]/cell[0][0];
+    F[3] = F[0]*cell[0][3]/cell[0][0];
+    F[4] = (cell[0][4] + cell[0][5])*F[0]/cell[0][0];
+    F[5] = 0;
+    return &F;
+}
+
+template<class T>
+Point<T>& getG(Cell<Point<T>> cell) {
+    Point<T> G = Point<T>(cell[0].length());
+    G[0] = cell[0][2];
+    G[1] = G[0]*cell[0][1]/cell[0][0];
+    G[2] = pow(G[0], 2)/cell[0][0] + cell[0][5];
+    G[3] = G[0]*cell[0][3]/cell[0][0];
+    G[4] = (cell[0][4] + cell[0][5])*G[0]/cell[0][0];
+    G[5] = 0;
+    return &G;
+}
+
+template<class T>
+Point<T>& getH(Cell<Point<T>> cell) {
+    Point<T> H = Point<T>(cell[0].length());
+    H[0] = cell[0][3];
+    H[1] = H[0] * cell[0][1]/cell[0][0];
+    H[2] = H[0] * cell[0][2] / cell[0][0];
+    H[3] = pow(H[0], 2)/cell[0][0] + cell[0][5];
+    H[4] = (cell[0][4] + cell[0][5])*H[0]/cell[0][0];
+    H[5] = 0;
+    return &H;
+}
+
+
+template<class T>
+void gasDynamic(Cell<Point<T>>*** cells,
+                long int nx, long int ny, long int nz,
+                T hx, T hy, T hz,
+                T tau, T t0, T t1
+) {
+    T hx_2 = hx * hx;
+    T koeffX = tau/hx_2;
+    T hy_2 = hy * hy;
+    T koeffY = tau/hy_2;
+    T hz_2 = hz * hz;
+    T koeffZ = tau/hz_2;
+
+    long int M = floor((t1 - t0) / tau + 1);
+    std::cout<<"All bad"<<std::endl;
+    for (int time = 0; time < M; time++) {
+        std::cout<<"All bad:"<<time<<std::endl;
+        for(int i = 0; i < nx; i++) {
+            for(int j = 0; j < ny; j++) {
+                for(int k = 0; k < nz; k++) {
+                    Cell<Point<T>>& cell = cells[i][j][k];
+
+                    // F
+                    Point<T> Fcur = getF(cell);
+                    // G
+                    Point<T> Gcur = getG(cell);
+                    // H
+                    Point<T> Hcur = getH(cell);
+
+                    // U
 
                     Point<T> F1 = (cell - cell.getNeighbor(0))*koeffX;
                     Point<T> F2 = (cell.getNeighbor(1) - cell)*koeffX;

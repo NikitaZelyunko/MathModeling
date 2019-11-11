@@ -35,6 +35,66 @@ void printCSV(double *** arr,
 }
 
 template <class T>
+void solveNeighbors(
+        Cell<T>*** curLayer,
+        Cell<T>& nullCell,
+        long int nx, long int ny, long int nz,
+        long int paramCount
+) {
+    for(int i = 0; i < nx; i++) {
+        for (int j = 0; j < ny; j++) {
+            for (int k = 0; k < nz; k++) {
+                Cell<T>& cell = curLayer[i][j][k];
+                if (!cell.isBorder()) {
+                    cell.addNeighbor(&(curLayer[i - 1][j][k]));
+                    cell.addNeighbor(&(curLayer[i + 1][j][k]));
+
+                    cell.addNeighbor(&(curLayer[i][j - 1][k]));
+                    cell.addNeighbor(&(curLayer[i][j + 1][k]));
+
+                    cell.addNeighbor(&(curLayer[i][j][k - 1]));
+                    cell.addNeighbor(&(curLayer[i][j][k + 1]));
+                } else {
+                    if (i == 0) {
+                        cell.addNeighbor(&nullCell);
+                        cell.addNeighbor(&(curLayer[i + 1][j][k]));
+                    } else if (i == nx - 1) {
+                        cell.addNeighbor(&(curLayer[i - 1][j][k]));
+                        cell.addNeighbor(&nullCell);
+                    } else {
+                        cell.addNeighbor(&(curLayer[i - 1][j][k]));
+                        cell.addNeighbor(&(curLayer[i + 1][j][k]));
+                    }
+
+                    if (j == 0) {
+                        cell.addNeighbor(&nullCell);
+                        cell.addNeighbor(&(curLayer[i][j + 1][k]));
+                    } else if (j == ny - 1) {
+                        cell.addNeighbor(&(curLayer[i][j - 1][k]));
+                        cell.addNeighbor(&nullCell);
+                    } else {
+                        cell.addNeighbor(&(curLayer[i][j - 1][k]));
+                        cell.addNeighbor(&(curLayer[i][j + 1][k]));
+                    }
+
+                    if (k == 0) {
+                        cell.addNeighbor(&nullCell);
+                        cell.addNeighbor(&(curLayer[i][j][k + 1]));
+                    } else if (k == nz - 1) {
+                        cell.addNeighbor(&(curLayer[i][j][k - 1]));
+                        cell.addNeighbor(&nullCell);
+                    } else {
+                        Cell<T>& zero = curLayer[0][0][0];
+                        cell.addNeighbor(&(curLayer[i][j][k - 1]));
+                        cell.addNeighbor(&(curLayer[i][j][k + 1]));
+                    }
+                }
+            }
+        }
+    }
+}
+
+template <class T>
   Cell<T>*** generateThermalCells(
         long int nx, long int ny, long int nz,
         T hx, T hy, T hz,
@@ -72,6 +132,7 @@ template <class T>
             curLayer[i][j][nz-1] = Cell<T>(paramCount, 0.0, 0);
         }
     }
+
     Cell<T>& nullCell = *(new Cell<T>(paramCount, 0.0, 1));
       for(int i = 0; i < nx; i++) {
           for (int j = 0; j < ny; j++) {
@@ -127,6 +188,76 @@ template <class T>
     return curLayer;
 }
 
+template <class T>
+Cell<Point<T>>*** generateGasCells(
+        long int nx, long int ny, long int nz,
+        T hx, T hy, T hz,
+        T tau, T t0, T t1,
+        long int paramCount
+) {
+    Cell<Point<T>>*** curLayer = create3DArray<Cell<Point<T>>>(nx, ny, nz);
+
+    int center = std::floor((double)nx/2);
+    T E = 0;
+    T e = 0;
+    Point<T> leftFiller = Point<T>(paramCount);
+    e = 1 / (0.4);
+    leftFiller[0] = 1;
+    leftFiller[1] = 0;
+    leftFiller[2] = 0;
+    leftFiller[3] = 0;
+    leftFiller[4] = e + (pow(leftFiller[1], 2) + pow(leftFiller[2],2) + pow(leftFiller[3],2))/2;
+    leftFiller[5] = 1;
+
+    Point<T> rightFiller = Point<T>(paramCount);
+    e = 0.1 / (0.4);
+    rightFiller[0] = 0.125;
+    rightFiller[1] = 0;
+    rightFiller[2] = 0;
+    rightFiller[3] = 0;
+    rightFiller[4] = e + (pow(leftFiller[1], 2) + pow(leftFiller[2],2) + pow(leftFiller[3],2))/2;
+    rightFiller[5] = 0.1;
+
+    for (int i = 0; i < nx; i++) {
+        if(i <= center) {
+            for (int j = 0; j < ny; j++) {
+                for (int k = 0; k < nz; k++) {
+                    curLayer[i][j][k] = Cell<Point<T>>(1, leftFiller, 3);
+                }
+            }
+        } else {
+            for (int j = 0; j < ny; j++) {
+                for (int k = 0; k < nz; k++) {
+                    curLayer[i][j][k] = Cell<Point<T>>(1, rightFiller, 3);
+                }
+            }
+        }
+    }
+
+    for (int j = 0; j < ny; j++) {
+        for (int k = 0; k < nz; k++) {
+            curLayer[0][j][k].setType(0);
+            curLayer[nx-1][j][k].setType(1);
+        }
+    }
+
+    for(int i = 1; i < nx-1; i++) {
+        for(int k = 0; k < nz; k++) {
+            curLayer[i][0][k].setType(2);
+            curLayer[i][ny-1][k].setType(2);
+        }
+    }
+    for(int i = 1; i < nx - 1; i++) {
+        for(int j = 0; j < ny; j++){
+            curLayer[i][j][0].setType(2);
+            curLayer[i][j][nz-1].setType(2);
+        }
+    }
+    Cell<Point<T>>& nullCell = *(new Cell<Point<T>>(1, Point<T>(paramCount, 0.0), 1));
+    solveNeighbors<Point<T>>(curLayer, nullCell, nx, ny, nz, paramCount);
+    return curLayer;
+}
+
 double*** convertToArray(Cell<double>*** cells, long int nx, long int ny, long int nz) {
     double*** result = create3DArray<double>(nx, ny, nz);
     for(int i = 0; i < nx; i++){
@@ -175,21 +306,39 @@ int main() {
 //    );
 //    VTSFormateer(result, Nx, Ny, Nz, x0, x1, y0, y1, z0, z1, "Result2.vts");
 
-    Cell<double>*** cells = generateThermalCells(
-                Nx, Ny, Nz,
-                hx, hy, hz,
-                tau, t0, t1, 1
-            );
-    std::cout<<"All right"<<std::endl;
-    gasDynamic(cells,
+//    Cell<double>*** cells = generateThermalCells(
+//                Nx, Ny, Nz,
+//                hx, hy, hz,
+//                tau, t0, t1, 1
+//            );
+//    std::cout<<"All right"<<std::endl;
+//    gasDynamic(cells,
+//            Nx, Ny, Nz,
+//            hx, hy, hz,
+//            tau, t0, t1,
+//            1);
+//    std::cout<<"All right"<<std::endl;
+//    double*** result = convertToArray(cells, Nx, Ny, Nz);
+//
+//    VTSFormateer(result, Nx, Ny, Nz, x0, x1, y0, y1, z0, z1, "TestGasDynamic.vts");
+//
+//    std::cout << "RESULT SOLVE" << std::endl;
+
+    Cell<Point<double>>*** cells = generateGasCells(
             Nx, Ny, Nz,
             hx, hy, hz,
-            tau, t0, t1,
-            1);
+            tau, t0, t1, 6
+    );
     std::cout<<"All right"<<std::endl;
-    double*** result = convertToArray(cells, Nx, Ny, Nz);
+//    gasDynamic(cells,
+//               Nx, Ny, Nz,
+//               hx, hy, hz,
+//               tau, t0, t1,
+//               1);
+    std::cout<<"All right"<<std::endl;
+//    double*** result = convertToArray(cells, Nx, Ny, Nz);
 
-    VTSFormateer(result, Nx, Ny, Nz, x0, x1, y0, y1, z0, z1, "TestGasDynamic.vts");
+//    VTSFormateer(result, Nx, Ny, Nz, x0, x1, y0, y1, z0, z1, "TestGasDynamic.vts");
 
     std::cout << "RESULT SOLVE" << std::endl;
 //    double ***tochn = create3DArray<double>(N, N, N);
@@ -217,7 +366,7 @@ int main() {
 //    printCSV(result, N, x0, x1, y0, y1, z0, z1, "resultFlux.csv");
 //    printCSV(tochn, N, x0, x1, y0, y1, z0, z1, "tochnFlux.csv");
 //    printCSV(razn, N, x0, x1, y0, y1, z0, z1, "raznFlux.csv");
-    delete3DArray(result, Nx, Ny);
+//    delete3DArray(result, Nx, Ny);
 //    delete3DArray(tochn, N, N);
 //    delete3DArray(razn, N, N);
     return 0;
