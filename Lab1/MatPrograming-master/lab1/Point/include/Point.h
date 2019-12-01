@@ -85,7 +85,7 @@ class Point {
     }
 
     ~Point() {
-        delete coeffs;
+        delete[] coeffs;
     }
 
     int length() const {

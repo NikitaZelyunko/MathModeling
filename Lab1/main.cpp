@@ -222,7 +222,8 @@ Cell<Point<T>>*** generateGasCells(
         if(i <= center) {
             for (int j = 0; j < ny; j++) {
                 for (int k = 0; k < nz; k++) {
-                    curLayer[i][j][k] = Cell<Point<T>>(1, leftFiller, 3);
+                    Cell<Point<T>> cell = Cell<Point<T>>(1, leftFiller, 3);
+                    curLayer[i][j][k] = cell;
                 }
             }
         } else {
@@ -272,9 +273,9 @@ double*** convertToArray(Cell<double>*** cells, long int nx, long int ny, long i
 
 
 int main() {
-    long int Nx = 20;
-    long int Ny = 20;
-    long int Nz = 20;
+    long int Nx = 200;
+    long int Ny = 3;
+    long int Nz = 3;
     double x0 = 0; double x1 = 1;
     double y0 = 0; double y1 = 1;
     double z0 = 0; double z1 = 1;
@@ -285,7 +286,9 @@ int main() {
 
     double hmin = std::min(std::min(hx, hy), hz);
 
-    double tau = pow(hmin,2)/10/3; double t0 = 0; double t1 = 0.1;
+//    double tau = pow(hmin,2)/10/3;
+    double tau = 2.5 / 1000000;
+    double t0 = 0; double t1 = 0.2;
 
 //    double ***result = Reshenie_Uravn_Teploprovodnosti_methodom_progonki_yavn<double>(
 //        Nx,
@@ -330,12 +333,20 @@ int main() {
             tau, t0, t1, 6
     );
     std::cout<<"All right"<<std::endl;
-//    gasDynamic(cells,
-//               Nx, Ny, Nz,
-//               hx, hy, hz,
-//               tau, t0, t1,
-//               1);
+    gasDynamic(cells,
+               Nx, Ny, Nz,
+               hx, hy, hz,
+               tau, t0, t1,
+               1);
     std::cout<<"All right"<<std::endl;
+    for(int i=0; i < Nx; i++) {
+        for(int j = 0; j < Ny; j++) {
+            for(int k = 0; k < Nz; k++) {
+                std::cout<<i<<","<<j<<","<<k;
+                cells[i][j][k][0].print("u:");
+            }
+        }
+    }
 //    double*** result = convertToArray(cells, Nx, Ny, Nz);
 
 //    VTSFormateer(result, Nx, Ny, Nz, x0, x1, y0, y1, z0, z1, "TestGasDynamic.vts");

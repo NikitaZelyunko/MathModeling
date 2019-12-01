@@ -41,7 +41,7 @@ public:
         this->type = INNER;
     }
 
-    Cell(int n, const T& filler, int type): Cell(n, filler) {
+    Cell(int n, const T& filler, int type): Cell<T>(n, filler) {
         if(checkType(type)) {
             this->type = type;
         }

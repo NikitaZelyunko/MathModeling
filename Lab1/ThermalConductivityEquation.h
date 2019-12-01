@@ -332,7 +332,7 @@ void thermalDynamic(Cell<T>*** cells,
 }
 
 template<class T>
-Point<T>& getF(Cell<Point<T>> cell) {
+const Point<T> getF(const Cell<Point<T>>& cell) {
     Point<T> F = Point<T>(cell[0].length());
     F[0] = cell[0][1];
     F[1] = pow(F[0],2)/cell[0][0] + cell[0][5];
@@ -340,11 +340,11 @@ Point<T>& getF(Cell<Point<T>> cell) {
     F[3] = F[0]*cell[0][3]/cell[0][0];
     F[4] = (cell[0][4] + cell[0][5])*F[0]/cell[0][0];
     F[5] = 0;
-    return &F;
+    return F;
 }
 
 template<class T>
-Point<T>& getG(Cell<Point<T>> cell) {
+const Point<T> getG(const Cell<Point<T>>& cell) {
     Point<T> G = Point<T>(cell[0].length());
     G[0] = cell[0][2];
     G[1] = G[0]*cell[0][1]/cell[0][0];
@@ -352,11 +352,11 @@ Point<T>& getG(Cell<Point<T>> cell) {
     G[3] = G[0]*cell[0][3]/cell[0][0];
     G[4] = (cell[0][4] + cell[0][5])*G[0]/cell[0][0];
     G[5] = 0;
-    return &G;
+    return G;
 }
 
 template<class T>
-Point<T>& getH(Cell<Point<T>> cell) {
+const Point<T> getH(const Cell<Point<T>>& cell) {
     Point<T> H = Point<T>(cell[0].length());
     H[0] = cell[0][3];
     H[1] = H[0] * cell[0][1]/cell[0][0];
@@ -364,7 +364,23 @@ Point<T>& getH(Cell<Point<T>> cell) {
     H[3] = pow(H[0], 2)/cell[0][0] + cell[0][5];
     H[4] = (cell[0][4] + cell[0][5])*H[0]/cell[0][0];
     H[5] = 0;
-    return &H;
+    return H;
+}
+
+template<class T>
+T getAlpha(Point<T> firstCell, Point<T> secondCell) {
+    T firstC = sqrt(firstCell[5]*1.4/firstCell[0]);
+    T secondC = sqrt(secondCell[5]*1.4/secondCell[0]);
+
+    T firstU = firstCell[1]/firstCell[0];
+    T firstV = firstCell[2]/firstCell[0];
+    T firstW = firstCell[3]/firstCell[0];
+
+    T secondU = secondCell[1]/secondCell[0];
+    T secondV = secondCell[2]/secondCell[0];
+    T secondW = secondCell[3]/secondCell[0];
+
+    return std::max(sqrt(pow(firstU, 2) + pow(firstV, 2) + pow(firstW, 2)) + firstC, sqrt(pow(secondU, 2) + pow(secondV, 2) + pow(secondW, 2)) + secondC);
 }
 
 
@@ -372,7 +388,8 @@ template<class T>
 void gasDynamic(Cell<Point<T>>*** cells,
                 long int nx, long int ny, long int nz,
                 T hx, T hy, T hz,
-                T tau, T t0, T t1
+                T tau, T t0, T t1,
+                int paramCount
 ) {
     T hx_2 = hx * hx;
     T koeffX = tau/hx_2;
@@ -392,30 +409,54 @@ void gasDynamic(Cell<Point<T>>*** cells,
 
                     // F
                     Point<T> Fcur = getF(cell);
+                    Point<T> Fleft = getF(cell.getNeighbor(0));
+                    Point<T> Fright = getF(cell.getNeighbor(1));
+
+                    T FalphaLeft = getAlpha(cell.getNeighbor(0)[0], cell[0]);
+                    T FalphaRight = getAlpha(cell[0], cell.getNeighbor(1)[0]);
                     // G
                     Point<T> Gcur = getG(cell);
+                    Point<T> Gleft = getG(cell.getNeighbor(2));
+                    Point<T> Gright = getG(cell.getNeighbor(3));
+
+                    T GalphaLeft = getAlpha(cell.getNeighbor(2)[0], cell[0]);
+                    T GalphaRight = getAlpha(cell[0], cell.getNeighbor(3)[0]);
                     // H
                     Point<T> Hcur = getH(cell);
+                    Point<T> Hleft = getH(cell.getNeighbor(4));
+                    Point<T> Hright = getH(cell.getNeighbor(5));
+
+                    T HalphaLeft = getAlpha(cell.getNeighbor(4)[0], cell[0]);
+                    T HalphaRight = getAlpha(cell[0], cell.getNeighbor(5)[0]);
+
+                    Point<T> F_prev_2 = (Fcur + Fleft - ((cell[0] - cell.getNeighbor(0)[0]) * FalphaLeft))*0.5;
+                    Point<T> F_next_2 = (Fright + Fcur - (cell.getNeighbor(1)[0] - cell[0]) * FalphaRight)*0.5;
+
+                    Point<T> G_prev_2 = (Gcur +  Gleft - (cell[0] - cell.getNeighbor(2)[0]) * GalphaLeft)*0.5;
+                    Point<T> G_next_2 = (Gright + Gcur - (cell.getNeighbor(3)[0] - cell[0]) * GalphaRight)*0.5;
+
+                    Point<T> H_prev_2 = (Hcur + Hleft - (cell[0] - cell.getNeighbor(4)[0])* HalphaLeft)*0.5;
+                    Point<T> H_next_2 = (Hright + Hcur - (cell.getNeighbor(5)[0] - cell[0]) * HalphaRight)*0.5;
 
                     // U
 
-                    Point<T> F1 = (cell - cell.getNeighbor(0))*koeffX;
-                    Point<T> F2 = (cell.getNeighbor(1) - cell)*koeffX;
-
-                    Point<T> G1 = (cell - cell.getNeighbor(2))*koeffY;
-                    Point<T> G2 = (cell.getNeighbor(3) - cell)*koeffY;
-
-                    Point<T> H1 = (cell - cell.getNeighbor(4))*koeffZ;
-                    Point<T> H2 = (cell.getNeighbor(5) - cell)*koeffZ;
-
-                    cell.getNeighbor(0)+=F1;
-                    cell.getNeighbor(1)-=F2;
-
-                    cell.getNeighbor(2)+=G1;
-                    cell.getNeighbor(3)-=G2;
-
-                    cell.getNeighbor(4)+=H1;
-                    cell.getNeighbor(5)-=H2;
+//                    Point<T> F1 = (cell - cell.getNeighbor(0))*koeffX;
+//                    Point<T> F2 = (cell.getNeighbor(1) - cell)*koeffX;
+//
+//                    Point<T> G1 = (cell - cell.getNeighbor(2))*koeffY;
+//                    Point<T> G2 = (cell.getNeighbor(3) - cell)*koeffY;
+//
+//                    Point<T> H1 = (cell - cell.getNeighbor(4))*koeffZ;
+//                    Point<T> H2 = (cell.getNeighbor(5) - cell)*koeffZ;
+//
+//                    cell.getNeighbor(0)+=F1;
+//                    cell.getNeighbor(1)-=F2;
+//
+//                    cell.getNeighbor(2)+=G1;
+//                    cell.getNeighbor(3)-=G2;
+//
+//                    cell.getNeighbor(4)+=H1;
+//                    cell.getNeighbor(5)-=H2;
                 }
             }
         }
