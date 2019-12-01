@@ -30,21 +30,21 @@ T*** create3DArray(int n, int m, int l) {
 
 template<class T>
 void delete1DArray(T* arr) {
-	delete arr;
+	delete[] arr;
 }
 
 template<class T>
 void delete2DArray(T** arr, int n) {
 	for (int i = 0; i < n; i++)
 		delete1DArray(arr[i]);
-	delete arr;
+	delete [] arr;
 }
 
 template<class T>
 void delete3DArray(T*** arr, int n, int m) {
 	for (int i = 0; i < n; i++)
 		delete2DArray(arr[i], m);
-	delete arr;
+	delete [] arr;
 }
 
 template <class T>
@@ -333,44 +333,71 @@ void thermalDynamic(Cell<T>*** cells,
 
 template<class T>
 const Point<T> getF(const Cell<Point<T>>& cell) {
+    T ro = cell[0][0];
+    T roU = cell[0][1];
+    T roV = cell[0][2];
+    T roW = cell[0][3];
+    T roE = cell[0][4];
+    T p = cell[0][5];
+    T u = roU/ro;
+
     Point<T> F = Point<T>(cell[0].length());
-    F[0] = cell[0][1];
-    F[1] = pow(F[0],2)/cell[0][0] + cell[0][5];
-    F[2] = F[0]*cell[0][2]/cell[0][0];
-    F[3] = F[0]*cell[0][3]/cell[0][0];
-    F[4] = (cell[0][4] + cell[0][5])*F[0]/cell[0][0];
+    F[0] = roU;
+    F[1] = roU*u + p;
+    F[2] = roV*u;
+    F[3] = roW*u;
+    F[4] = u*(roE + p);
     F[5] = 0;
     return F;
 }
 
 template<class T>
 const Point<T> getG(const Cell<Point<T>>& cell) {
+    T ro = cell[0][0];
+    T roU = cell[0][1];
+    T roV = cell[0][2];
+    T roW = cell[0][3];
+    T roE = cell[0][4];
+    T p = cell[0][5];
+    T v = roV/ro;
+
     Point<T> G = Point<T>(cell[0].length());
-    G[0] = cell[0][2];
-    G[1] = G[0]*cell[0][1]/cell[0][0];
-    G[2] = pow(G[0], 2)/cell[0][0] + cell[0][5];
-    G[3] = G[0]*cell[0][3]/cell[0][0];
-    G[4] = (cell[0][4] + cell[0][5])*G[0]/cell[0][0];
+    G[0] = roV;
+    G[1] = roU*v;
+    G[2] = roV*v + p;
+    G[3] = roW*v;
+    G[4] = v*(roE + p);
     G[5] = 0;
     return G;
 }
 
 template<class T>
 const Point<T> getH(const Cell<Point<T>>& cell) {
+    T ro = cell[0][0];
+    T roU = cell[0][1];
+    T roV = cell[0][2];
+    T roW = cell[0][3];
+    T roE = cell[0][4];
+    T p = cell[0][5];
+    T w = roW/ro;
+
     Point<T> H = Point<T>(cell[0].length());
-    H[0] = cell[0][3];
-    H[1] = H[0] * cell[0][1]/cell[0][0];
-    H[2] = H[0] * cell[0][2] / cell[0][0];
-    H[3] = pow(H[0], 2)/cell[0][0] + cell[0][5];
-    H[4] = (cell[0][4] + cell[0][5])*H[0]/cell[0][0];
+    H[0] = roW;
+    H[1] = roU*w;
+    H[2] = roV*w;
+    H[3] = roW*w + p;
+    H[4] = w*(roE + p);
     H[5] = 0;
     return H;
 }
 
 template<class T>
 T getAlpha(Point<T> firstCell, Point<T> secondCell) {
-    T firstC = sqrt(firstCell[5]*1.4/firstCell[0]);
-    T secondC = sqrt(secondCell[5]*1.4/secondCell[0]);
+    T firstP = firstCell[5];
+    T secondP = secondCell[5];
+
+    T firstC = sqrt(firstP*1.4/firstCell[0]);
+    T secondC = sqrt(secondP*1.4/secondCell[0]);
 
     T firstU = firstCell[1]/firstCell[0];
     T firstV = firstCell[2]/firstCell[0];
@@ -385,80 +412,256 @@ T getAlpha(Point<T> firstCell, Point<T> secondCell) {
 
 
 template<class T>
-void gasDynamic(Cell<Point<T>>*** cells,
+const Cell<Point<T>> getWall(Cell<Point<T>>& cell, int neighborIndex) {
+    Cell<Point<T>> realNeighbor = cell;
+    switch (neighborIndex) {
+        case 0: {
+            realNeighbor[0][0] *=-1;
+        } break;
+        case 1: {
+            realNeighbor[0][0] *=-1;
+        } break;
+        case 2: {
+            realNeighbor[0][1] *=-1;
+        } break;
+        case 3: {
+            realNeighbor[0][1] *=-1;
+        } break;
+        case 4: {
+            realNeighbor[0][2] *=-1;
+        } break;
+        case 5: {
+            realNeighbor[0][2] *=-1;
+        } break;
+    }
+    return realNeighbor;
+}
+
+template<class T>
+Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
                 long int nx, long int ny, long int nz,
                 T hx, T hy, T hz,
                 T tau, T t0, T t1,
                 int paramCount
 ) {
     T hx_2 = hx * hx;
-    T koeffX = tau/hx_2;
+    T koeffX = 0.5 * tau/hx;
     T hy_2 = hy * hy;
-    T koeffY = tau/hy_2;
+    T koeffY = 0.5 * tau/hy;
     T hz_2 = hz * hz;
-    T koeffZ = tau/hz_2;
+    T koeffZ = 0.5 * tau/hz;
+
+    Cell<Point<T>>*** curLayer = copyArray(cells, nx, ny, nz);
+    Cell<Point<T>>*** bufLayer = copyArray(cells, nx, ny, nz);
 
     long int M = floor((t1 - t0) / tau + 1);
     std::cout<<"All bad"<<std::endl;
     for (int time = 0; time < M; time++) {
         std::cout<<"All bad:"<<time<<std::endl;
-        for(int i = 0; i < nx; i++) {
-            for(int j = 0; j < ny; j++) {
-                for(int k = 0; k < nz; k++) {
-                    Cell<Point<T>>& cell = cells[i][j][k];
 
-                    // F
-                    Point<T> Fcur = getF(cell);
-                    Point<T> Fleft = getF(cell.getNeighbor(0));
-                    Point<T> Fright = getF(cell.getNeighbor(1));
+        // F
+        for (int i = 0; i < nx - 1; i++) {
+            for (int j = 1; j < ny - 1; j++) {
+                for (int k = 1; k < nz - 1; k++) {
 
-                    T FalphaLeft = getAlpha(cell.getNeighbor(0)[0], cell[0]);
-                    T FalphaRight = getAlpha(cell[0], cell.getNeighbor(1)[0]);
-                    // G
-                    Point<T> Gcur = getG(cell);
-                    Point<T> Gleft = getG(cell.getNeighbor(2));
-                    Point<T> Gright = getG(cell.getNeighbor(3));
+                    Cell<Point<T>> cur = curLayer[i][j][k];
+                    Cell<Point<T>> right;
+                    if(curLayer[i+1][j][k].getType() == 2) {
+                        right = getWall(cur, 1);
+                    } else {
+                        right = curLayer[i+1][j][k];
+                    }
 
-                    T GalphaLeft = getAlpha(cell.getNeighbor(2)[0], cell[0]);
-                    T GalphaRight = getAlpha(cell[0], cell.getNeighbor(3)[0]);
-                    // H
-                    Point<T> Hcur = getH(cell);
-                    Point<T> Hleft = getH(cell.getNeighbor(4));
-                    Point<T> Hright = getH(cell.getNeighbor(5));
+                    Point<T> Fcur = getF(cur);
+                    Point<T> Fright = getF(right);
 
-                    T HalphaLeft = getAlpha(cell.getNeighbor(4)[0], cell[0]);
-                    T HalphaRight = getAlpha(cell[0], cell.getNeighbor(5)[0]);
-
-                    Point<T> F_prev_2 = (Fcur + Fleft - ((cell[0] - cell.getNeighbor(0)[0]) * FalphaLeft))*0.5;
-                    Point<T> F_next_2 = (Fright + Fcur - (cell.getNeighbor(1)[0] - cell[0]) * FalphaRight)*0.5;
-
-                    Point<T> G_prev_2 = (Gcur +  Gleft - (cell[0] - cell.getNeighbor(2)[0]) * GalphaLeft)*0.5;
-                    Point<T> G_next_2 = (Gright + Gcur - (cell.getNeighbor(3)[0] - cell[0]) * GalphaRight)*0.5;
-
-                    Point<T> H_prev_2 = (Hcur + Hleft - (cell[0] - cell.getNeighbor(4)[0])* HalphaLeft)*0.5;
-                    Point<T> H_next_2 = (Hright + Hcur - (cell.getNeighbor(5)[0] - cell[0]) * HalphaRight)*0.5;
-
-                    // U
-
-//                    Point<T> F1 = (cell - cell.getNeighbor(0))*koeffX;
-//                    Point<T> F2 = (cell.getNeighbor(1) - cell)*koeffX;
-//
-//                    Point<T> G1 = (cell - cell.getNeighbor(2))*koeffY;
-//                    Point<T> G2 = (cell.getNeighbor(3) - cell)*koeffY;
-//
-//                    Point<T> H1 = (cell - cell.getNeighbor(4))*koeffZ;
-//                    Point<T> H2 = (cell.getNeighbor(5) - cell)*koeffZ;
-//
-//                    cell.getNeighbor(0)+=F1;
-//                    cell.getNeighbor(1)-=F2;
-//
-//                    cell.getNeighbor(2)+=G1;
-//                    cell.getNeighbor(3)-=G2;
-//
-//                    cell.getNeighbor(4)+=H1;
-//                    cell.getNeighbor(5)-=H2;
+                    T FalphaRight = getAlpha(cur[0], right[0]);
+                    Point<T> F = (Fright + Fcur - (right[0] - cur[0]) * FalphaRight)* koeffX;
+                    if(i == 0) {
+                        bufLayer[i+1][j][k][0]+=F;
+                    } else if(i == nx-2) {
+                        bufLayer[i][j][k][0]-=F;
+                    } else {
+                        bufLayer[i+1][j][k][0]+=F;
+                        bufLayer[i][j][k][0]-=F;
+                    }
                 }
             }
         }
+
+        // G
+
+        for (int j = 0; j < ny - 1; j++) {
+            for (int i = 1; i < nx - 1; i++) {
+                for (int k = 1; k < nz - 1; k++) {
+                    Cell<Point<T>> cur = curLayer[i][j][k];
+                    Cell<Point<T>> right;
+                    if(curLayer[i][j+1][k].getType() == 2) {
+                        right = getWall(cur, 3);
+                    } else {
+                        right = curLayer[i][j+1][k];
+                    }
+
+                    Point<T> Gcur = getG(cur);
+                    Point<T> Gright = getG(right);
+
+                    T GalphaRight = getAlpha(cur[0], right[0]);
+                    Point<T> G = (Gright + Gcur - (right[0] - cur[0]) * GalphaRight)* koeffY;
+                    if(j == 0) {
+                        bufLayer[i][j+1][k][0]+=G;
+                    } else if(j == ny - 2) {
+                        bufLayer[i][j][k][0]-=G;
+                    } else {
+                        bufLayer[i][j+1][k][0]+=G;
+                        bufLayer[i][j][k][0]-=G;
+                    }
+                }
+            }
+        }
+
+        // H
+
+        for (int k = 0; k < nz - 1; k++) {
+            for (int j = 1; j < ny - 1; j++) {
+                for (int i = 1; i < nx - 1; i++) {
+                    Cell<Point<T>> cur = curLayer[i][j][k];
+                    Cell<Point<T>> right;
+                    if(curLayer[i][j][k+1].getType() == 2) {
+                        right = getWall(cur, 5);
+                    } else {
+                        right = curLayer[i][j][k+1];
+                    }
+                    Point<T> Hcur = getH(cur);
+                    Point<T> Hright = getH(right);
+
+                    T HalphaRight = getAlpha(cur[0], right[0]);
+                    Point<T> H = (Hright + Hcur - (right[0] - cur[0]) * HalphaRight)* koeffZ;
+                    if(k == 0) {
+                        bufLayer[i][j][k+1][0]+=H;
+                    } else if(k == nz - 2) {
+                        bufLayer[i][j][k][0]-=H;
+                    } else {
+                        bufLayer[i][j][k+1][0]+=H;
+                        bufLayer[i][j][k][0]-=H;
+                    }
+                }
+            }
+        }
+
+        for(int i = 1; i < nx -1; i++) {
+            for(int j = 1; j < ny - 1; j++) {
+                for(int k = 1; k < nz - 1; k++) {
+                    T ro = bufLayer[i][j][k][0][0];
+                    T roU = bufLayer[i][j][k][0][1];
+                    T roV = bufLayer[i][j][k][0][2];
+                    T roW = bufLayer[i][j][k][0][3];
+                    T roE = bufLayer[i][j][k][0][4];
+                    bufLayer[i][j][k][0][5] = (roE - (pow(roU, 2) + pow(roV, 2) + pow(roW,2)) /(2*ro))*(0.4);
+                }
+            }
+        }
+
+
+
+//        for(int i = 0; i < nx; i++) {
+//            for(int j = 0; j < ny; j++) {
+//                for(int k = 0; k < nz; k++) {
+//                    Cell<Point<T>>& cell = cells[i][j][k];
+//
+//                    Cell<Point<T>>& xLeft = cell.getNeighbor(0);
+////                    if(xLeft.getType() == 2) {
+////                        xLeft = getNeighborInnerOrBoundary(cell, 0);
+////                    }
+//
+//                    Cell<Point<T>>& xRight = cell.getNeighbor(1);
+////                    if(xRight.getType() == 2) {
+////                        xRight = getNeighborInnerOrBoundary(cell, 1);
+////                    }
+//
+//                    Cell<Point<T>>& yLeft = cell.getNeighbor(2);
+////                    if(yLeft.getType() == 2) {
+////                         yLeft = getNeighborInnerOrBoundary(cell, 2);
+////                    }
+//
+//                    Cell<Point<T>>& yRight = cell.getNeighbor(3);
+////                    if(yRight.getType() == 2) {
+////                        yRight = getNeighborInnerOrBoundary(cell, 3);
+////                    }
+//
+//                    Cell<Point<T>>& zLeft = cell.getNeighbor(4);
+////                    if(zLeft.getType() == 2) {
+////                        zLeft = getNeighborInnerOrBoundary(cell, 4);
+////                    }
+//
+//                    Cell<Point<T>>& zRight = cell.getNeighbor(5);
+////                    if(zRight.getType() == 2) {
+////                        zRight = getNeighborInnerOrBoundary(cell, 5);
+////                    }
+//
+//                    // F
+//                    Point<T> Fcur = getF(cell);
+//                    Point<T> Fleft = getF(xLeft);
+//                    Point<T> Fright = getF(xRight);
+//
+//                    T FalphaLeft = getAlpha(xLeft[0], cell[0]);
+//                    T FalphaRight = getAlpha(cell[0], xRight[0]);
+//                    // G
+//                    Point<T> Gcur = getG(cell);
+//                    Point<T> Gleft = getG(yLeft);
+//                    Point<T> Gright = getG(yRight);
+//
+//                    T GalphaLeft = getAlpha(yLeft[0], cell[0]);
+//                    T GalphaRight = getAlpha(cell[0], yRight[0]);
+//                    // H
+//                    Point<T> Hcur = getH(cell);
+//                    Point<T> Hleft = getH(zLeft);
+//                    Point<T> Hright = getH(zRight);
+//
+//                    T HalphaLeft = getAlpha(zLeft[0], cell[0]);
+//                    T HalphaRight = getAlpha(cell[0], zRight[0]);
+//
+//                    Point<T> F_prev_2 = (Fcur + Fleft - ((cell[0] - xLeft[0]) * FalphaLeft))* koeffX;
+//                    Point<T> F_next_2 = (Fright + Fcur - (xRight[0] - cell[0]) * FalphaRight)* koeffX;
+//
+//                    Point<T> G_prev_2 = (Gcur +  Gleft - (cell[0] - yLeft[0]) * GalphaLeft)* koeffY;
+//                    Point<T> G_next_2 = (Gright + Gcur - (yRight[0] - cell[0]) * GalphaRight)* koeffY;
+//
+//                    Point<T> H_prev_2 = (Hcur + Hleft - (cell[0] - zLeft[0])* HalphaLeft)* koeffZ;
+//                    Point<T> H_next_2 = (Hright + Hcur - (zRight[0] - cell[0]) * HalphaRight)* koeffZ;
+//
+//                    xLeft[0]+=F_prev_2;
+//                    xRight[0]-=F_next_2;
+//
+//                    yLeft[0]+=G_prev_2;
+//                    yRight[0]-=G_next_2;
+//
+//                    zLeft[0]+=H_prev_2;
+//                    zRight[0]+=H_next_2;
+//                    // U
+//
+////                    Point<T> F1 = (cell - cell.getNeighbor(0))*koeffX;
+////                    Point<T> F2 = (cell.getNeighbor(1) - cell)*koeffX;
+////
+////                    Point<T> G1 = (cell - cell.getNeighbor(2))*koeffY;
+////                    Point<T> G2 = (cell.getNeighbor(3) - cell)*koeffY;
+////
+////                    Point<T> H1 = (cell - cell.getNeighbor(4))*koeffZ;
+////                    Point<T> H2 = (cell.getNeighbor(5) - cell)*koeffZ;
+////
+////                    cell.getNeighbor(0)+=F1;
+////                    cell.getNeighbor(1)-=F2;
+////
+////                    cell.getNeighbor(2)+=G1;
+////                    cell.getNeighbor(3)-=G2;
+////
+////                    cell.getNeighbor(4)+=H1;
+////                    cell.getNeighbor(5)-=H2;
+//                }
+//            }
+//        }
+        delete3DArray(curLayer, nx, ny);
+        curLayer = copyArray(bufLayer, nx, ny, nz);
     }
+    delete3DArray(bufLayer, nx, ny);
+    return curLayer;
 }

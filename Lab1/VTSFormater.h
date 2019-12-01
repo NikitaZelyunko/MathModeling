@@ -13,6 +13,7 @@ void VTSFormateer(
         T x0, T x1,
         T y0, T y1,
         T z0, T z1,
+        int numberCount, int precision,
         std::string filename) {
 
     T hx = (x1 - x0) / nx;
@@ -51,7 +52,7 @@ void VTSFormateer(
     for(int i = 0; i < nx; i++) {
         for(int j = 0; j < ny; j++) {
             for(int k = 0; k < nz; k++) {
-                file<<arr[i][j][k]<<" ";
+                file<<std::fixed<<std::setw(numberCount)<<std::setprecision(precision)<<arr[i][j][k]<<" ";
             }
             file<<std::endl;
         }

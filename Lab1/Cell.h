@@ -65,6 +65,10 @@ public:
         this->type = type;
     }
 
+    int getType() {
+        return this->type;
+    }
+
     bool isInner() const {
         return  type == INNER;
     }

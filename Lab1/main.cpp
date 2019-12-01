@@ -255,7 +255,7 @@ Cell<Point<T>>*** generateGasCells(
         }
     }
     Cell<Point<T>>& nullCell = *(new Cell<Point<T>>(1, Point<T>(paramCount, 0.0), 1));
-    solveNeighbors<Point<T>>(curLayer, nullCell, nx, ny, nz, paramCount);
+//    solveNeighbors<Point<T>>(curLayer, nullCell, nx, ny, nz, paramCount);
     return curLayer;
 }
 
@@ -269,6 +269,58 @@ double*** convertToArray(Cell<double>*** cells, long int nx, long int ny, long i
         }
     }
     return result;
+}
+
+double*** convertToArray(Cell<Point<double>>*** cells, long int nx, long int ny, long int nz) {
+    double*** result = create3DArray<double>(nx, ny, nz);
+    for(int i = 0; i < nx; i++){
+        for(int j = 0; j < ny; j++) {
+            for(int k = 0; k < nz; k++) {
+                result[i][j][k] = cells[i][j][k][0][1] / cells[i][j][k][0][0];
+            }
+        }
+    }
+    return result;
+}
+
+void printSodU(Cell<Point<double>>*** cells, int nx, int ny, int nz, double x0, double y0, double z0, double hx, double hy, double hz, std::string filename) {
+    std::ofstream file(filename);
+    for(int i = 0; i < nx; i++) {
+        file<<std::fixed<<std::setw(6)<<std::setprecision(5)<<x0 + hx*i<<" "<<cells[i][1][1][0][1] / cells[i][1][1][0][0]<<std::endl;
+    }
+    file.close();
+}
+
+void printSodV(Cell<Point<double>>*** cells, int nx, int ny, int nz, double x0, double y0, double z0, double hx, double hy, double hz, std::string filename) {
+    std::ofstream file(filename);
+    for(int i = 0; i < nx; i++) {
+        file<<std::fixed<<std::setw(6)<<std::setprecision(5)<<x0 + hx*i<<" "<<cells[i][1][1][0][2] / cells[i][1][1][0][0]<<std::endl;
+    }
+    file.close();
+}
+
+void printSodW(Cell<Point<double>>*** cells, int nx, int ny, int nz, double x0, double y0, double z0, double hx, double hy, double hz, std::string filename) {
+    std::ofstream file(filename);
+    for(int i = 0; i < nx; i++) {
+        file<<std::fixed<<std::setw(6)<<std::setprecision(5)<<x0 + hx*i<<" "<<cells[i][1][1][0][3] / cells[i][1][1][0][0]<<std::endl;
+    }
+    file.close();
+}
+
+void printSodE(Cell<Point<double>>*** cells, int nx, int ny, int nz, double x0, double y0, double z0, double hx, double hy, double hz, std::string filename) {
+    std::ofstream file(filename);
+    for(int i = 0; i < nx; i++) {
+        file<<std::fixed<<std::setw(6)<<std::setprecision(5)<<x0 + hx*i<<" "<<cells[i][1][1][0][4] / cells[i][1][1][0][0]<<std::endl;
+    }
+    file.close();
+}
+
+void printSodP(Cell<Point<double>>*** cells, int nx, int ny, int nz, double x0, double y0, double z0, double hx, double hy, double hz, std::string filename) {
+    std::ofstream file(filename);
+    for(int i = 0; i < nx; i++) {
+        file<<std::fixed<<std::setw(6)<<std::setprecision(5)<<x0 + hx*i<<" "<<cells[i][1][1][0][5]<<std::endl;
+    }
+    file.close();
 }
 
 
@@ -286,8 +338,8 @@ int main() {
 
     double hmin = std::min(std::min(hx, hy), hz);
 
-//    double tau = pow(hmin,2)/10/3;
-    double tau = 2.5 / 1000000;
+    double tau = pow(hmin,2);
+//    double tau = 2.5 / 100000;
     double t0 = 0; double t1 = 0.2;
 
 //    double ***result = Reshenie_Uravn_Teploprovodnosti_methodom_progonki_yavn<double>(
@@ -333,7 +385,7 @@ int main() {
             tau, t0, t1, 6
     );
     std::cout<<"All right"<<std::endl;
-    gasDynamic(cells,
+    cells = gasDynamic(cells,
                Nx, Ny, Nz,
                hx, hy, hz,
                tau, t0, t1,
@@ -347,9 +399,15 @@ int main() {
             }
         }
     }
-//    double*** result = convertToArray(cells, Nx, Ny, Nz);
+    double*** result = convertToArray(cells, Nx, Ny, Nz);
 
-//    VTSFormateer(result, Nx, Ny, Nz, x0, x1, y0, y1, z0, z1, "TestGasDynamic.vts");
+
+    VTSFormateer(result, Nx, Ny, Nz, x0, x1, y0, y1, z0, z1, 6, 4, "TestGasDynamic.vts");
+    printSodU(cells, Nx, Ny, Nz, x0, y0, z0, hx, hy, hz, "U.txt");
+    printSodV(cells, Nx, Ny, Nz, x0, y0, z0, hx, hy, hz, "V.txt");
+    printSodW(cells, Nx, Ny, Nz, x0, y0, z0, hx, hy, hz, "W.txt");
+    printSodE(cells, Nx, Ny, Nz, x0, y0, z0, hx, hy, hz, "E.txt");
+    printSodP(cells, Nx, Ny, Nz, x0, y0, z0, hx, hy, hz, "P.txt");
 
     std::cout << "RESULT SOLVE" << std::endl;
 //    double ***tochn = create3DArray<double>(N, N, N);
