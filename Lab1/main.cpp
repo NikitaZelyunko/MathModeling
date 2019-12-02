@@ -189,7 +189,7 @@ template <class T>
 }
 
 template <class T>
-Cell<Point<T>>*** generateGasCells(
+Cell<Point<T>>*** generateSodCells(
         long int nx, long int ny, long int nz,
         T hx, T hy, T hz,
         T tau, T t0, T t1,
@@ -323,14 +323,109 @@ void printSodP(Cell<Point<double>>*** cells, int nx, int ny, int nz, double x0, 
     file.close();
 }
 
+void printSodRo(Cell<Point<double>>*** cells, int nx, int ny, int nz, double x0, double y0, double z0, double hx, double hy, double hz, std::string filename) {
+    std::ofstream file(filename);
+    for(int i = 0; i < nx; i++) {
+        file<<std::fixed<<std::setw(6)<<std::setprecision(5)<<x0 + hx*i<<" "<<cells[i][1][1][0][0]<<std::endl;
+    }
+    file.close();
+}
+
+
+template <class T>
+Cell<Point<T>>*** generateHeliumCylinderCells(
+        long int nx, long int ny, long int nz,
+        T tau, T t0, T t1,
+        T D,
+        long int paramCount
+) {
+    T x0 = 0, x1 = 6.5 * D;
+    T y0 = 0, y1 = 1.78 * D;
+    T z0 = 0, z1 = 1.78 * D;
+
+    Cell<Point<T>>*** curLayer = create3DArray<Cell<Point<T>>>(nx, ny, nz);
+
+//    int center = std::floor((double)nx/2);
+    T E = 0;
+    T e = 0;
+    Point<T> postShockAir = Point<T>(paramCount);
+    e = 1 / (0.4);
+    postShockAir[0] = 1.65;
+    postShockAir[1] = 114.4 * postShockAir[0];
+    postShockAir[2] = 0;
+    postShockAir[3] = 0;
+    postShockAir[4] = e + (pow(postShockAir[1], 2) + pow(postShockAir[2],2) + pow(postShockAir[3],2))/2;
+    postShockAir[5] = 158900;
+
+    Point<T> preShockAir = Point<T>(paramCount);
+    e = 0.1 / (0.4);
+    preShockAir[0] = 1.20;
+    preShockAir[1] = 0;
+    preShockAir[2] = 0;
+    preShockAir[3] = 0;
+    preShockAir[4] = e + (pow(preShockAir[1], 2) + pow(preShockAir[2],2) + pow(preShockAir[3],2))/2;
+    preShockAir[5] = 101325;
+
+    Point<T> helium = Point<T>(paramCount);
+    e = 0.1 / (0.4);
+    preShockAir[0] = 0.166;
+    preShockAir[1] = 0;
+    preShockAir[2] = 0;
+    preShockAir[3] = 0;
+    preShockAir[4] = e + (pow(preShockAir[1], 2) + pow(preShockAir[2],2) + pow(preShockAir[3],2))/2;
+    preShockAir[5] = 101325;
+
+//    for (int i = 0; i < nx; i++) {
+//        if(i <= center) {
+//            for (int j = 0; j < ny; j++) {
+//                for (int k = 0; k < nz; k++) {
+//                    Cell<Point<T>> cell = Cell<Point<T>>(1, leftFiller, 3);
+//                    curLayer[i][j][k] = cell;
+//                }
+//            }
+//        } else {
+//            for (int j = 0; j < ny; j++) {
+//                for (int k = 0; k < nz; k++) {
+//                    curLayer[i][j][k] = Cell<Point<T>>(1, rightFiller, 3);
+//                }
+//            }
+//        }
+//    }
+
+    for (int j = 0; j < ny; j++) {
+        for (int k = 0; k < nz; k++) {
+            curLayer[0][j][k].setType(0);
+            curLayer[nx-1][j][k].setType(1);
+        }
+    }
+
+    for(int i = 1; i < nx-1; i++) {
+        for(int k = 0; k < nz; k++) {
+            curLayer[i][0][k].setType(2);
+            curLayer[i][ny-1][k].setType(2);
+        }
+    }
+    for(int i = 1; i < nx - 1; i++) {
+        for(int j = 0; j < ny; j++){
+            curLayer[i][j][0].setType(2);
+            curLayer[i][j][nz-1].setType(2);
+        }
+    }
+    Cell<Point<T>>& nullCell = *(new Cell<Point<T>>(1, Point<T>(paramCount, 0.0), 1));
+//    solveNeighbors<Point<T>>(curLayer, nullCell, nx, ny, nz, paramCount);
+    return curLayer;
+}
+
 
 int main() {
+
     long int Nx = 200;
     long int Ny = 3;
     long int Nz = 3;
     double x0 = 0; double x1 = 1;
     double y0 = 0; double y1 = 1;
     double z0 = 0; double z1 = 1;
+    double D = 0.05;
 
     double hx = (x1 - x0) / Nx;
     double hy = (y1 - y0) / Ny;
@@ -340,7 +435,7 @@ int main() {
 
     double tau = pow(hmin,2);
 //    double tau = 2.5 / 100000;
-    double t0 = 0; double t1 = 0.2;
+    double t0 = 0; double t1 = 0.02;
 
 //    double ***result = Reshenie_Uravn_Teploprovodnosti_methodom_progonki_yavn<double>(
 //        Nx,
@@ -379,35 +474,41 @@ int main() {
 //
 //    std::cout << "RESULT SOLVE" << std::endl;
 
-    Cell<Point<double>>*** cells = generateGasCells(
-            Nx, Ny, Nz,
-            hx, hy, hz,
-            tau, t0, t1, 6
-    );
-    std::cout<<"All right"<<std::endl;
+//    Cell<Point<double>>*** cells = generateSodCells(
+//            Nx, Ny, Nz,
+//            hx, hy, hz,
+//            tau, t0, t1, 6
+//    );
+//    std::cout<<"All right"<<std::endl;
     cells = gasDynamic(cells,
                Nx, Ny, Nz,
                hx, hy, hz,
                tau, t0, t1,
                1);
-    std::cout<<"All right"<<std::endl;
-    for(int i=0; i < Nx; i++) {
-        for(int j = 0; j < Ny; j++) {
-            for(int k = 0; k < Nz; k++) {
-                std::cout<<i<<","<<j<<","<<k;
-                cells[i][j][k][0].print("u:");
-            }
-        }
-    }
-    double*** result = convertToArray(cells, Nx, Ny, Nz);
+//    std::cout<<"All right"<<std::endl;
+//    for(int i=0; i < Nx; i++) {
+//        for(int j = 0; j < Ny; j++) {
+//            for(int k = 0; k < Nz; k++) {
+//                std::cout<<i<<","<<j<<","<<k;
+//                cells[i][j][k][0].print("u:");
+//            }
+//        }
+//    }
+//    double*** result = convertToArray(cells, Nx, Ny, Nz);
 
 
-    VTSFormateer(result, Nx, Ny, Nz, x0, x1, y0, y1, z0, z1, 6, 4, "TestGasDynamic.vts");
-    printSodU(cells, Nx, Ny, Nz, x0, y0, z0, hx, hy, hz, "U.txt");
-    printSodV(cells, Nx, Ny, Nz, x0, y0, z0, hx, hy, hz, "V.txt");
-    printSodW(cells, Nx, Ny, Nz, x0, y0, z0, hx, hy, hz, "W.txt");
-    printSodE(cells, Nx, Ny, Nz, x0, y0, z0, hx, hy, hz, "E.txt");
-    printSodP(cells, Nx, Ny, Nz, x0, y0, z0, hx, hy, hz, "P.txt");
+//    VTSFormateer(result, Nx, Ny, Nz, x0, x1, y0, y1, z0, z1, 6, 4, "TestGasDynamic.vts");
+//    VTSFormateer(result, Nx, Ny, Nz, x0, x1, y0, y1, z0, z1, 6, 4, "TestGasDynamic.vts");
+//    VTSFormateer(result, Nx, Ny, Nz, x0, x1, y0, y1, z0, z1, 6, 4, "TestGasDynamic.vts");
+//    VTSFormateer(result, Nx, Ny, Nz, x0, x1, y0, y1, z0, z1, 6, 4, "TestGasDynamic.vts");
+//    VTSFormateer(result, Nx, Ny, Nz, x0, x1, y0, y1, z0, z1, 6, 4, "TestGasDynamic.vts");
+//    VTSFormateer(result, Nx, Ny, Nz, x0, x1, y0, y1, z0, z1, 6, 4, "TestGasDynamic.vts");
+//    printSodU(cells, Nx, Ny, Nz, x0, y0, z0, hx, hy, hz, "U.txt");
+//    printSodV(cells, Nx, Ny, Nz, x0, y0, z0, hx, hy, hz, "V.txt");
+//    printSodW(cells, Nx, Ny, Nz, x0, y0, z0, hx, hy, hz, "W.txt");
+//    printSodE(cells, Nx, Ny, Nz, x0, y0, z0, hx, hy, hz, "E.txt");
+//    printSodP(cells, Nx, Ny, Nz, x0, y0, z0, hx, hy, hz, "P.txt");
+//    printSodRo(cells, Nx, Ny, Nz, x0, y0, z0, hx, hy, hz, "Ro.txt");
 
     std::cout << "RESULT SOLVE" << std::endl;
 //    double ***tochn = create3DArray<double>(N, N, N);

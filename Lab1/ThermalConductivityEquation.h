@@ -416,22 +416,22 @@ const Cell<Point<T>> getWall(Cell<Point<T>>& cell, int neighborIndex) {
     Cell<Point<T>> realNeighbor = cell;
     switch (neighborIndex) {
         case 0: {
-            realNeighbor[0][0] *=-1;
+            realNeighbor[0][1] *=-1;
         } break;
         case 1: {
-            realNeighbor[0][0] *=-1;
+            realNeighbor[0][1] *=-1;
         } break;
         case 2: {
-            realNeighbor[0][1] *=-1;
+            realNeighbor[0][2] *=-1;
         } break;
         case 3: {
-            realNeighbor[0][1] *=-1;
+            realNeighbor[0][2] *=-1;
         } break;
         case 4: {
-            realNeighbor[0][2] *=-1;
+            realNeighbor[0][3] *=-1;
         } break;
         case 5: {
-            realNeighbor[0][2] *=-1;
+            realNeighbor[0][3] *=-1;
         } break;
     }
     return realNeighbor;
@@ -455,19 +455,25 @@ Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
     Cell<Point<T>>*** bufLayer = copyArray(cells, nx, ny, nz);
 
     long int M = floor((t1 - t0) / tau + 1);
-    std::cout<<"All bad"<<std::endl;
+//    std::cout<<"All bad"<<std::endl;
     for (int time = 0; time < M; time++) {
-        std::cout<<"All bad:"<<time<<std::endl;
+//        std::cout<<"All bad:"<<time<<std::endl;
 
         // F
         for (int i = 0; i < nx - 1; i++) {
             for (int j = 1; j < ny - 1; j++) {
                 for (int k = 1; k < nz - 1; k++) {
 
-                    Cell<Point<T>> cur = curLayer[i][j][k];
+                    Cell<Point<T>> cur;
+                    if(curLayer[i][j][k].getType() == 2) {
+                        cur = getWall(curLayer[i+1][j][k], 1);
+                    } else {
+                        cur = curLayer[i][j][k];
+                    }
+
                     Cell<Point<T>> right;
                     if(curLayer[i+1][j][k].getType() == 2) {
-                        right = getWall(cur, 1);
+                        right = getWall(curLayer[i][j][k], 0);
                     } else {
                         right = curLayer[i+1][j][k];
                     }
@@ -494,10 +500,16 @@ Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
         for (int j = 0; j < ny - 1; j++) {
             for (int i = 1; i < nx - 1; i++) {
                 for (int k = 1; k < nz - 1; k++) {
-                    Cell<Point<T>> cur = curLayer[i][j][k];
+                    Cell<Point<T>> cur;
+                    if(curLayer[i][j][k].getType() == 2) {
+                        cur = getWall(curLayer[i][j+1][k], 3);
+                    } else {
+                        cur = curLayer[i][j][k];
+                    }
+
                     Cell<Point<T>> right;
                     if(curLayer[i][j+1][k].getType() == 2) {
-                        right = getWall(cur, 3);
+                        right = getWall(cur, 2);
                     } else {
                         right = curLayer[i][j+1][k];
                     }
@@ -524,10 +536,16 @@ Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
         for (int k = 0; k < nz - 1; k++) {
             for (int j = 1; j < ny - 1; j++) {
                 for (int i = 1; i < nx - 1; i++) {
-                    Cell<Point<T>> cur = curLayer[i][j][k];
+                    Cell<Point<T>> cur;
+                    if(curLayer[i][j][k].getType() == 2) {
+                        cur = getWall(curLayer[i][j][k+1], 5);
+                    } else {
+                        cur = curLayer[i][j][k];
+                    }
+
                     Cell<Point<T>> right;
                     if(curLayer[i][j][k+1].getType() == 2) {
-                        right = getWall(cur, 5);
+                        right = getWall(cur, 4);
                     } else {
                         right = curLayer[i][j][k+1];
                     }
