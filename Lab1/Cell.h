@@ -96,7 +96,7 @@ public:
         return (*this);
     }
 
-    inline const Cell<T> operator =(const T& scalar) const {
+    inline Cell<T>& operator =(const T& scalar) {
         if(this->isInner()) {
             Point<T>::operator=(scalar);
         }

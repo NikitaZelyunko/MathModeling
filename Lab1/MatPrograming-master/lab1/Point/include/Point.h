@@ -114,7 +114,7 @@ class Point {
         return *this;
     }
 
-    inline const Point<T> operator =(const T& scalar) const {
+    inline Point<T>& operator =(const T& scalar) {
         delete coeffs;
         fillCoeffs(scalar);
         return *this;
