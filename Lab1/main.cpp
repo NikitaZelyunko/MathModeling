@@ -333,7 +333,7 @@ void printSodRo(Cell<Point<double>>*** cells, int nx, int ny, int nz, double x0,
 
 template<class T>
 bool isInSphere(T x, T y, T z, T x0, T y0, T z0, T r) {
-    return (pow(x - x0, 2) + pow(y - y0, 2) + pow(z - z0, 2)) <= pow(r, 2);
+    return pow(x - x0, 2) + pow(y - y0, 2) + pow(z - z0, 2) <= pow(r, 2);
 }
 
 template <class T>
@@ -354,27 +354,37 @@ Cell<Point<T>>*** generateHeliumCylinderCells(
     T postShockY0 = y0, postShockY1 = y1;
     T postShockZ0 = z0, postShockZ1 = z1;
 
-    T sphereCenterX = 3.5 * D, sphereCenterY = y1 / 2, sphereCenterZ = z1 / 2;
+    T sphereCenterX = 3 * D, sphereCenterY = y1 / 2, sphereCenterZ = z1 / 2;
 
     T preShockFirstX0 = postShockX1, preShockFirstX1 = preShockFirstX0 + 0.5 * D;
     T preShockFirstY0 = y0, preShockFirstY1 = y1;
     T preShockFirstZ0 = z0, preShockFirstZ1 = z1;
 
-    T preShockSecondX0 = preShockFirstX1, preShockSecondX1 = preShockSecondX0 + D;
-    T preShockSecondY0 = y0, preShockSecondY1 = y1 / 2 - R;
-    T preShockSecondZ0 = z0, preShockSecondZ1 = z1 / 2 - R;
+    T bubbleNeighbourBottomX0 = preShockFirstX1, bubbleNeighbourBottomX1 = bubbleNeighbourBottomX0 + D;
+    T bubbleNeighbourBottomY0 = y0, bubbleNeighbourBottomY1 = y1 / 2 - R;
+    T bubbleNeighbourBottomZ0 = z0, bubbleNeighbourBottomZ1 = z1;
 
-    T preShockThirdX0 = preShockFirstX1, preShockThirdX1 = preShockThirdX0 + D;
-    T preShockThirdY0 = y1 / 2 + R, preShockThirdY1 = y1;
-    T preShockThirdZ0 = z1 / 2 + R, preShockThirdZ1 = z1;
+    T bubbleSquareX0 = preShockFirstX1, bubbleSquareX1 = bubbleSquareX0 + D;
+    T bubbleSquareY0 = bubbleNeighbourBottomY1, bubbleSquareY1 = bubbleSquareY0 + D;
+    T bubbleSquareZ0 = z1 / 2 - R, bubbleSquareZ1 = bubbleSquareZ0 + D;
 
-    T preShockFourthX0 = preShockThirdX1, preShockFourthX1 = x1;
-    T preShockFourthY0 = y0, preShockFourthY1 = y1;
-    T preShockFourthZ0 = z0, preShockFourthZ1 = z1;
+    T bubbleNeighbourTopX0 = preShockFirstX1, bubbleNeighbourTopX1 = bubbleNeighbourTopX0 + D;
+    T bubbleNeighbourTopY0 = bubbleSquareY1, bubbleNeighbourTopY1 = y1;
+    T bubbleNeighbourTopZ0 = z0, bubbleNeighbourTopZ1 = z1;
 
-    T bubbleSquareX0 = preShockFirstX1, bubbleSquareX1 = preShockFirstX1 + D;
-    T bubbleSquareY0 = preShockSecondY1, bubbleSquareY1 = bubbleSquareY0 + R;
-    T bubbleSquareZ0 = preShockSecondZ1, bubbleSquareZ1 = bubbleSquareZ0 + R;
+    T bubbleNeighbourFrontX0 = preShockFirstX1, bubbleNeighbourFrontX1 = bubbleNeighbourFrontX0 + D;
+    T bubbleNeighbourFrontY0 = bubbleSquareY0, bubbleNeighbourFrontY1 = bubbleSquareY1;
+    T bubbleNeighbourFrontZ0 = z0, bubbleNeighbourFrontZ1 = bubbleSquareZ0;
+
+    T bubbleNeighbourBackX0 = preShockFirstX1, bubbleNeighbourBackX1 = bubbleNeighbourBackX0 + D;
+    T bubbleNeighbourBackY0 = bubbleSquareY0, bubbleNeighbourBackY1 = bubbleSquareY1;
+    T bubbleNeighbourBackZ0 = bubbleSquareZ1, bubbleNeighbourBackZ1 = z1;
+
+    T preShockThirdX0 = bubbleSquareX1, preShockThirdX1 = x1;
+    T preShockThirdY0 = y0, preShockThirdY1 = y1;
+    T preShockThirdZ0 = z0, preShockThirdZ1 = z1;
+
+
 
 
     int firstSectorXLength = floor((postShockX1 - postShockX0) / hx), firstSectorYLength = floor((postShockY1 - postShockY0)/ hy), firstSectorZLength = floor((postShockZ1 - postShockZ0) / hz);
@@ -389,35 +399,70 @@ Cell<Point<T>>*** generateHeliumCylinderCells(
     secondSectorY0 = 0, secondSectorY1 = ny,
     secondSectorZ0 = 0, secondSectorZ1 = nz;
 
-    int thirdSectorXLength = floor((preShockSecondX1 - preShockSecondX0) / hx), thirdSectorYLength = floor((preShockSecondY1 - preShockSecondY0) / hy), thirdSectorZLength = floor((preShockSecondZ1 - preShockSecondZ0) / hz);
     int
-    thirdSectorX0 = secondSectorX1, thirdSectorX1 = thirdSectorX0 + thirdSectorXLength,
-    thirdSectorY0 = 0, thirdSectorY1 = thirdSectorY0 + thirdSectorYLength,
-    thirdSectorZ0 = 0, thirdSectorZ1 = thirdSectorZ0 + thirdSectorZLength;
+    bubbleNeighbourBottomXLength = floor((bubbleNeighbourBottomX1 - bubbleNeighbourBottomX0) / hx),
+    bubbleNeighbourBottomYLength = floor((bubbleNeighbourBottomY1 - bubbleNeighbourBottomY0) / hy),
+    bubbleNeighbourBottomZLength = floor((bubbleNeighbourBottomZ1 - bubbleNeighbourBottomZ0) / hz);
 
-    int bubbleSectorXLength = floor((bubbleSquareX1 - bubbleSquareX0) / hx), bubbleSectorYLength = floor((bubbleSquareY1 - bubbleSquareY0) / hy), bubbleSectorZLength = floor((bubbleSquareZ1 - bubbleSquareZ0) / hz);
+    int
+    bubbleNeighbourBottomSectorX0 = secondSectorX1, bubbleNeighbourBottomSectorX1 = bubbleNeighbourBottomSectorX0 + bubbleNeighbourBottomXLength,
+    bubbleNeighbourBottomSectorY0 = 0, bubbleNeighbourBottomSectorY1 = bubbleNeighbourBottomSectorY0 + bubbleNeighbourBottomYLength,
+    bubbleNeighbourBottomSectorZ0 = 0, bubbleNeighbourBottomSectorZ1 = nz;
+
+    int
+    bubbleNeighbourFrontXLength = floor((bubbleNeighbourFrontX1 - bubbleNeighbourFrontX0) / hx),
+    bubbleNeighbourFrontYLength = floor((bubbleNeighbourFrontY1 - bubbleNeighbourFrontY0) / hy),
+    bubbleNeighbourFrontZLength = floor((bubbleNeighbourFrontZ1 - bubbleNeighbourFrontZ0) / hz);
+
+    int
+    bubbleNeighbourFrontSectorX0 = secondSectorX1, bubbleNeighbourFrontSectorX1 = bubbleNeighbourFrontSectorX0 + bubbleNeighbourFrontXLength,
+    bubbleNeighbourFrontSectorY0 = bubbleNeighbourBottomSectorY1, bubbleNeighbourFrontSectorY1 = bubbleNeighbourFrontSectorY0 + bubbleNeighbourFrontYLength,
+    bubbleNeighbourFrontSectorZ0 = 0, bubbleNeighbourFrontSectorZ1 = bubbleNeighbourFrontSectorZ0 + bubbleNeighbourFrontZLength;
+
+    int
+    bubbleNeighbourTopXLength = floor((bubbleNeighbourTopX1 - bubbleNeighbourTopX0) / hx),
+    bubbleNeighbourTopYLength = floor((bubbleNeighbourTopY1 - bubbleNeighbourTopY0) / hy),
+    bubbleNeighbourTopZLength = floor((bubbleNeighbourTopZ1 - bubbleNeighbourTopZ0) / hz);
+
+    int
+    bubbleNeighbourTopSectorX0 = secondSectorX1, bubbleNeighbourTopSectorX1 = bubbleNeighbourTopSectorX0 + bubbleNeighbourTopXLength,
+    bubbleNeighbourTopSectorY0 = bubbleNeighbourFrontSectorY1, bubbleNeighbourTopSectorY1 = ny,
+    bubbleNeighbourTopSectorZ0 = 0, bubbleNeighbourTopSectorZ1 = nz;
+
+    int
+    bubbleSectorXLength = floor((bubbleSquareX1 - bubbleSquareX0) / hx),
+    bubbleSectorYLength = floor((bubbleSquareY1 - bubbleSquareY0) / hy),
+    bubbleSectorZLength = floor((bubbleSquareZ1 - bubbleSquareZ0) / hz);
     int
     bubbleSectorX0 = secondSectorX1, bubbleSectorX1 = bubbleSectorX0 + bubbleSectorXLength,
-    bubbleSectorY0 = thirdSectorY1, bubbleSectorY1 = bubbleSectorY0 + bubbleSectorYLength,
-    bubbleSectorZ0 = thirdSectorZ1, bubbleSectorZ1 = bubbleSectorZ0 + bubbleSectorZLength;
+    bubbleSectorY0 = bubbleNeighbourBottomSectorY1, bubbleSectorY1 = bubbleSectorY0 + bubbleSectorYLength,
+    bubbleSectorZ0 = bubbleNeighbourFrontSectorZ1, bubbleSectorZ1 = bubbleSectorZ0 + bubbleSectorZLength;
 
-    int fourthSectorXLength = floor((preShockThirdX1 - preShockThirdX0) / hx), fourthSectorYLength = floor((preShockThirdY1 - preShockThirdY0) / hy), fourthSectorZLength = floor((preShockThirdZ1 - preShockThirdZ0) / hz);
     int
-    fourthSectorX0 = secondSectorX1, fourthSectorX1 = fourthSectorX0 + fourthSectorXLength,
-    fourthSectorY0 = bubbleSectorY1, fourthSectorY1 = ny,
-    fourthSectorZ0 = bubbleSectorZ1, fourthSectorZ1 = nz;
+    bubbleNeighbourBackXLength = floor((bubbleNeighbourBackX1 - bubbleNeighbourBackX0) / hx),
+    bubbleNeighbourBackYLength = floor((bubbleNeighbourBackY1 - bubbleNeighbourBackY0) / hy),
+    bubbleNeighbourBackZLength = floor((bubbleNeighbourBackZ1 - bubbleNeighbourBackZ0) / hz);
 
-    int fifthSectorXLength = floor((preShockFourthX1 - preShockFourthX0) / hx), fifthSectorYLength = floor((preShockFourthY1 - preShockFourthY0) / hy), fifthSectorZLength = floor((preShockFourthZ1 - preShockFourthZ0) / hz);
     int
-    fifthSectorX0 = fourthSectorX1, fifthSectorX1 = nx,
-    fifthSectorY0 = fourthSectorY1, fifthSectorY1 = ny,
-    fifthSectorZ0 = fourthSectorZ1, fifthSectorZ1 = nz;
+    bubbleNeighbourBackSectorX0 = secondSectorX1, bubbleNeighbourBackSectorX1 = bubbleNeighbourBackSectorX0 + bubbleNeighbourBackXLength,
+    bubbleNeighbourBackSectorY0 = bubbleNeighbourBottomSectorY1, bubbleNeighbourBackSectorY1 = bubbleNeighbourBackSectorY0 + bubbleNeighbourBackYLength,
+    bubbleNeighbourBackSectorZ0 = bubbleSectorZ1, bubbleNeighbourBackSectorZ1 = nz;
+
+    int
+    thirdSectorXLength = floor((preShockThirdX1 - preShockThirdX0) / hx),
+    thirdSectorYLength = floor((preShockThirdY1 - preShockThirdY0) / hy),
+    thirdSectorZLength = floor((preShockThirdZ1 - preShockThirdZ0) / hz);
+
+    int
+    thirdSectorX0 = bubbleNeighbourBackSectorX1, thirdSectorX1 = nx,
+    thirdSectorY0 = 0, thirdSectorY1 = ny,
+    thirdSectorZ0 = 0, thirdSectorZ1 = nz;
 
     Cell<Point<T>>*** curLayer = create3DArray<Cell<Point<T>>>(nx, ny, nz);
 
     T E = 0;
     T e = 0;
-    Cell<T> postShockAir = Cell<T>(paramCount);
+    Point<T> postShockAir = Point<T>(paramCount);
     e = 1 / (0.4);
     postShockAir[0] = 1.65;
     postShockAir[1] = 114.4 * postShockAir[0];
@@ -425,10 +470,9 @@ Cell<Point<T>>*** generateHeliumCylinderCells(
     postShockAir[3] = 0;
     postShockAir[4] = e + (pow(postShockAir[1], 2) + pow(postShockAir[2],2) + pow(postShockAir[3],2))/2;
     postShockAir[5] = 158900;
-    postShockAir.setType(3);
 
 
-    Cell<T> preShockAir = Cell<T>(paramCount);
+    Point<T> preShockAir = Point<T>(paramCount);
     e = 0.1 / (0.4);
     preShockAir[0] = 1.20;
     preShockAir[1] = 0;
@@ -436,9 +480,8 @@ Cell<Point<T>>*** generateHeliumCylinderCells(
     preShockAir[3] = 0;
     preShockAir[4] = e + (pow(preShockAir[1], 2) + pow(preShockAir[2],2) + pow(preShockAir[3],2))/2;
     preShockAir[5] = 101325;
-    preShockAir.setType(3);
 
-    Cell<T> helium = Cell<T>(paramCount);
+    Point<T> helium = Point<T>(paramCount);
     e = 0.1 / (0.4);
     helium[0] = 0.166;
     helium[1] = 0;
@@ -446,12 +489,11 @@ Cell<Point<T>>*** generateHeliumCylinderCells(
     helium[3] = 0;
     helium[4] = e + (pow(helium[1], 2) + pow(helium[2],2) + pow(helium[3],2))/2;
     helium[5] = 101325;
-    helium.setType(3);
 
     for(int i = firstSectorX0; i < firstSectorX1; i++) {
         for(int j = firstSectorY0; j < firstSectorY1; j++) {
             for(int k = firstSectorZ0; k < firstSectorZ1; k++) {
-                curLayer[i][j][k] = postShockAir;
+                curLayer[i][j][k] = Cell<Point<T>>(1, postShockAir, 3);
             }
         }
     }
@@ -459,15 +501,39 @@ Cell<Point<T>>*** generateHeliumCylinderCells(
     for(int i = secondSectorX0; i < secondSectorX1; i++) {
         for(int j = secondSectorY0; j < secondSectorY1; j++) {
             for(int k = secondSectorZ0; k < secondSectorZ1; k++) {
-                curLayer[i][j][k] = preShockAir;
+                curLayer[i][j][k] = Cell<Point<T>>(1, preShockAir, 3);
             }
         }
     }
 
-    for(int i = thirdSectorX0; i < thirdSectorX1; i++) {
-        for(int j = thirdSectorY0; j < thirdSectorY1; j++) {
-            for(int k = thirdSectorZ0; k < thirdSectorZ1; k++) {
-                curLayer[i][j][k] = preShockAir;
+    for(int i = bubbleNeighbourBottomSectorX0; i < bubbleNeighbourBottomSectorX1; i++) {
+        for(int j = bubbleNeighbourBottomSectorY0; j < bubbleNeighbourBottomSectorY1; j++) {
+            for(int k = bubbleNeighbourBottomSectorZ0; k < bubbleNeighbourBottomSectorZ1; k++) {
+                curLayer[i][j][k] = Cell<Point<T>>(1, preShockAir, 3);
+            }
+        }
+    }
+
+    for(int i = bubbleNeighbourFrontSectorX0; i < bubbleNeighbourFrontSectorX1; i++) {
+        for(int j = bubbleNeighbourFrontSectorY0; j < bubbleNeighbourFrontSectorY1; j++) {
+            for(int k = bubbleNeighbourFrontSectorZ0; k < bubbleNeighbourFrontSectorZ1; k++) {
+                curLayer[i][j][k] = Cell<Point<T>>(1, preShockAir, 3);
+            }
+        }
+    }
+
+    for(int i = bubbleNeighbourTopSectorX0; i < bubbleNeighbourTopSectorX1; i++) {
+        for(int j = bubbleNeighbourTopSectorY0; j < bubbleNeighbourTopSectorY1; j++) {
+            for(int k = bubbleNeighbourTopSectorZ0; k < bubbleNeighbourTopSectorZ1; k++) {
+                curLayer[i][j][k] = Cell<Point<T>>(1, preShockAir, 3);
+            }
+        }
+    }
+
+    for(int i = bubbleNeighbourBackSectorX0; i < bubbleNeighbourBackSectorX1; i++) {
+        for(int j = bubbleNeighbourBackSectorY0; j < bubbleNeighbourBackSectorY1; j++) {
+            for(int k = bubbleNeighbourBackSectorZ0; k < bubbleNeighbourBackSectorZ1; k++) {
+                curLayer[i][j][k] = Cell<Point<T>>(1, preShockAir, 3);
             }
         }
     }
@@ -482,26 +548,18 @@ Cell<Point<T>>*** generateHeliumCylinderCells(
                 zCellLeft = z0 + k * hz, zCellRight = zCellLeft + hz;
 
                 if(isInSphere(xCellLeft + (xCellRight - xCellLeft) / 2, yCellLeft + (yCellRight - yCellLeft) / 2, zCellLeft + (zCellRight - zCellLeft) / 2, sphereCenterX, sphereCenterY, sphereCenterZ, R)) {
-                    curLayer[i][j][k] = helium;
+                    curLayer[i][j][k] = Cell<Point<T>>(1, helium, 3);
                 } else {
-                    curLayer[i][j][k] = preShockAir;
+                    curLayer[i][j][k] = Cell<Point<T>>(1, preShockAir, 3);
                 }
             }
         }
     }
 
-    for(int i = fourthSectorX0; i < fourthSectorX1; i++) {
-        for(int j = fourthSectorY0; j < fourthSectorY1; j++) {
-            for(int k = fourthSectorZ0; k < fourthSectorZ1; k++) {
-                curLayer[i][j][k] = preShockAir;
-            }
-        }
-    }
-
-    for(int i = fifthSectorX0; i < fifthSectorX1; i++) {
-        for(int j = fifthSectorY0; j < fifthSectorY1; j++) {
-            for(int k = fifthSectorZ0; k < fifthSectorZ1; k++) {
-                curLayer[i][j][k] = preShockAir;
+    for(int i = thirdSectorX0; i < thirdSectorX1; i++) {
+        for(int j = thirdSectorY0; j < thirdSectorY1; j++) {
+            for(int k = thirdSectorZ0; k < thirdSectorZ1; k++) {
+                curLayer[i][j][k] = Cell<Point<T>>(1, preShockAir, 3);
             }
         }
     }
@@ -545,9 +603,9 @@ double*** convertRoToArray(Cell<Point<double>>*** cells, long int nx, long int n
 int main() {
 
     double D = 0.05;
-    long int Nx = 100;
-    long int Ny = 30;
-    long int Nz = 30;
+    long int Nx = 300;
+    long int Ny = 100;
+    long int Nz = 100;
     double x0 = 0; double x1 = 6.5 * D;
     double y0 = 0; double y1 = 1.78 * D;
     double z0 = 0; double z1 = 1.78 * D;
