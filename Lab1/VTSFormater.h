@@ -10,15 +10,8 @@ template <class T>
 void VTSFormateer(
         T*** arr,
         long int nx, long int ny, long int nz,
-        T x0, T x1,
-        T y0, T y1,
-        T z0, T z1,
         int numberCount, int precision,
         std::string filename) {
-
-    T hx = (x1 - x0) / nx;
-    T hy = (y1 - y0) / ny;
-    T hz = (z1 - z0) / nz;
 
     std::ofstream file(filename);
 
@@ -34,9 +27,9 @@ void VTSFormateer(
     file<<"<Points>"<<std::endl;
     file<<"<DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">"<<std::endl;
 
-    for(int i = 0; i < nx; i++) {
+    for(int k = 0; k < nz; k++) {
         for(int j = 0; j < ny; j++) {
-            for(int k = 0; k < nz; k++) {
+            for(int i = 0; i < nx; i++) {
                 file<<i<<" "<<j<<" "<<k<<" ";
             }
             file<<std::endl;
@@ -49,9 +42,9 @@ void VTSFormateer(
     file<<"<PointData>"<<std::endl;
 
     file<<"<DataArray type=\"Float64\" Name=\"Temperature\" format=\"ascii\">"<<std::endl;
-    for(int i = 0; i < nx; i++) {
+    for(int k = 0; k < nz; k++) {
         for(int j = 0; j < ny; j++) {
-            for(int k = 0; k < nz; k++) {
+            for(int i = 0; i < nx; i++) {
                 file<<std::fixed<<std::setw(numberCount)<<std::setprecision(precision)<<arr[i][j][k]<<" ";
             }
             file<<std::endl;

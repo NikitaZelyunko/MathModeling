@@ -400,9 +400,9 @@ Cell<Point<T>>*** generateHeliumCylinderCells(
     secondSectorZ0 = 0, secondSectorZ1 = nz;
 
     int
-    bubbleNeighbourBottomXLength = floor((bubbleNeighbourBottomX1 - bubbleNeighbourBottomX0) / hx),
-    bubbleNeighbourBottomYLength = floor((bubbleNeighbourBottomY1 - bubbleNeighbourBottomY0) / hy),
-    bubbleNeighbourBottomZLength = floor((bubbleNeighbourBottomZ1 - bubbleNeighbourBottomZ0) / hz);
+    bubbleNeighbourBottomXLength = floor((bubbleNeighbourBottomX1 - bubbleNeighbourBottomX0) / hx) + 1,
+    bubbleNeighbourBottomYLength = floor((bubbleNeighbourBottomY1 - bubbleNeighbourBottomY0) / hy) + 1,
+    bubbleNeighbourBottomZLength = floor((bubbleNeighbourBottomZ1 - bubbleNeighbourBottomZ0) / hz) + 1;
 
     int
     bubbleNeighbourBottomSectorX0 = secondSectorX1, bubbleNeighbourBottomSectorX1 = bubbleNeighbourBottomSectorX0 + bubbleNeighbourBottomXLength,
@@ -410,9 +410,9 @@ Cell<Point<T>>*** generateHeliumCylinderCells(
     bubbleNeighbourBottomSectorZ0 = 0, bubbleNeighbourBottomSectorZ1 = nz;
 
     int
-    bubbleNeighbourFrontXLength = floor((bubbleNeighbourFrontX1 - bubbleNeighbourFrontX0) / hx),
-    bubbleNeighbourFrontYLength = floor((bubbleNeighbourFrontY1 - bubbleNeighbourFrontY0) / hy),
-    bubbleNeighbourFrontZLength = floor((bubbleNeighbourFrontZ1 - bubbleNeighbourFrontZ0) / hz);
+    bubbleNeighbourFrontXLength = floor((bubbleNeighbourFrontX1 - bubbleNeighbourFrontX0) / hx) + 1,
+    bubbleNeighbourFrontYLength = floor((bubbleNeighbourFrontY1 - bubbleNeighbourFrontY0) / hy) + 1,
+    bubbleNeighbourFrontZLength = floor((bubbleNeighbourFrontZ1 - bubbleNeighbourFrontZ0) / hz) + 1;
 
     int
     bubbleNeighbourFrontSectorX0 = secondSectorX1, bubbleNeighbourFrontSectorX1 = bubbleNeighbourFrontSectorX0 + bubbleNeighbourFrontXLength,
@@ -420,9 +420,9 @@ Cell<Point<T>>*** generateHeliumCylinderCells(
     bubbleNeighbourFrontSectorZ0 = 0, bubbleNeighbourFrontSectorZ1 = bubbleNeighbourFrontSectorZ0 + bubbleNeighbourFrontZLength;
 
     int
-    bubbleNeighbourTopXLength = floor((bubbleNeighbourTopX1 - bubbleNeighbourTopX0) / hx),
-    bubbleNeighbourTopYLength = floor((bubbleNeighbourTopY1 - bubbleNeighbourTopY0) / hy),
-    bubbleNeighbourTopZLength = floor((bubbleNeighbourTopZ1 - bubbleNeighbourTopZ0) / hz);
+    bubbleNeighbourTopXLength = floor((bubbleNeighbourTopX1 - bubbleNeighbourTopX0) / hx) + 1,
+    bubbleNeighbourTopYLength = floor((bubbleNeighbourTopY1 - bubbleNeighbourTopY0) / hy) + 1,
+    bubbleNeighbourTopZLength = floor((bubbleNeighbourTopZ1 - bubbleNeighbourTopZ0) / hz) + 1;
 
     int
     bubbleNeighbourTopSectorX0 = secondSectorX1, bubbleNeighbourTopSectorX1 = bubbleNeighbourTopSectorX0 + bubbleNeighbourTopXLength,
@@ -430,18 +430,18 @@ Cell<Point<T>>*** generateHeliumCylinderCells(
     bubbleNeighbourTopSectorZ0 = 0, bubbleNeighbourTopSectorZ1 = nz;
 
     int
-    bubbleSectorXLength = floor((bubbleSquareX1 - bubbleSquareX0) / hx),
-    bubbleSectorYLength = floor((bubbleSquareY1 - bubbleSquareY0) / hy),
-    bubbleSectorZLength = floor((bubbleSquareZ1 - bubbleSquareZ0) / hz);
+    bubbleSectorXLength = floor((bubbleSquareX1 - bubbleSquareX0) / hx) + 1,
+    bubbleSectorYLength = floor((bubbleSquareY1 - bubbleSquareY0) / hy) + 1,
+    bubbleSectorZLength = floor((bubbleSquareZ1 - bubbleSquareZ0) / hz) + 1;
     int
     bubbleSectorX0 = secondSectorX1, bubbleSectorX1 = bubbleSectorX0 + bubbleSectorXLength,
     bubbleSectorY0 = bubbleNeighbourBottomSectorY1, bubbleSectorY1 = bubbleSectorY0 + bubbleSectorYLength,
     bubbleSectorZ0 = bubbleNeighbourFrontSectorZ1, bubbleSectorZ1 = bubbleSectorZ0 + bubbleSectorZLength;
 
     int
-    bubbleNeighbourBackXLength = floor((bubbleNeighbourBackX1 - bubbleNeighbourBackX0) / hx),
-    bubbleNeighbourBackYLength = floor((bubbleNeighbourBackY1 - bubbleNeighbourBackY0) / hy),
-    bubbleNeighbourBackZLength = floor((bubbleNeighbourBackZ1 - bubbleNeighbourBackZ0) / hz);
+    bubbleNeighbourBackXLength = floor((bubbleNeighbourBackX1 - bubbleNeighbourBackX0) / hx) + 1,
+    bubbleNeighbourBackYLength = floor((bubbleNeighbourBackY1 - bubbleNeighbourBackY0) / hy) + 1,
+    bubbleNeighbourBackZLength = floor((bubbleNeighbourBackZ1 - bubbleNeighbourBackZ0) / hz) + 1;
 
     int
     bubbleNeighbourBackSectorX0 = secondSectorX1, bubbleNeighbourBackSectorX1 = bubbleNeighbourBackSectorX0 + bubbleNeighbourBackXLength,
@@ -463,32 +463,35 @@ Cell<Point<T>>*** generateHeliumCylinderCells(
     T E = 0;
     T e = 0;
     Point<T> postShockAir = Point<T>(paramCount);
-    e = 1 / (0.4);
+
     postShockAir[0] = 1.65;
     postShockAir[1] = 114.4 * postShockAir[0];
     postShockAir[2] = 0;
     postShockAir[3] = 0;
-    postShockAir[4] = e + (pow(postShockAir[1], 2) + pow(postShockAir[2],2) + pow(postShockAir[3],2))/2;
     postShockAir[5] = 158900;
+    e = postShockAir[5] / postShockAir[0] / 0.4;
+    postShockAir[4] = postShockAir[0] * (e + (pow(postShockAir[1], 2) + pow(postShockAir[2],2) + pow(postShockAir[3],2))/2);
+
 
 
     Point<T> preShockAir = Point<T>(paramCount);
-    e = 0.1 / (0.4);
     preShockAir[0] = 1.20;
     preShockAir[1] = 0;
     preShockAir[2] = 0;
     preShockAir[3] = 0;
-    preShockAir[4] = e + (pow(preShockAir[1], 2) + pow(preShockAir[2],2) + pow(preShockAir[3],2))/2;
     preShockAir[5] = 101325;
+    e = preShockAir[5] / preShockAir[0] / 0.4;
+    preShockAir[4] = preShockAir[0] * (e + (pow(preShockAir[1], 2) + pow(preShockAir[2],2) + pow(preShockAir[3],2))/2);
 
     Point<T> helium = Point<T>(paramCount);
-    e = 0.1 / (0.4);
     helium[0] = 0.166;
     helium[1] = 0;
     helium[2] = 0;
     helium[3] = 0;
-    helium[4] = e + (pow(helium[1], 2) + pow(helium[2],2) + pow(helium[3],2))/2;
     helium[5] = 101325;
+    e = helium[5] / helium[0] / 0.4;
+    helium[4] = helium[0] * (e + (pow(helium[1], 2) + pow(helium[2],2) + pow(helium[3],2))/2);
+
 
     for(int i = firstSectorX0; i < firstSectorX1; i++) {
         for(int j = firstSectorY0; j < firstSectorY1; j++) {
@@ -603,9 +606,9 @@ double*** convertRoToArray(Cell<Point<double>>*** cells, long int nx, long int n
 int main() {
 
     double D = 0.05;
-    long int Nx = 300;
-    long int Ny = 100;
-    long int Nz = 100;
+    long int Nx = 50;
+    long int Ny = Nx / 6.5 * 1.78;
+    long int Nz = Nx / 6.5 * 1.78;
     double x0 = 0; double x1 = 6.5 * D;
     double y0 = 0; double y1 = 1.78 * D;
     double z0 = 0; double z1 = 1.78 * D;
@@ -665,6 +668,16 @@ int main() {
             D,
             6
     );
+
+    Cell<Point<double>>*** result = gasDynamic(cells,
+               Nx, Ny, Nz,
+               hx, hy, hz,
+               tau, t0, t1,
+               1,
+               100,
+               "HeliumBubble"
+               );
+    delete3DArray(cells, Nx, Ny);
 //    std::cout<<"All right"<<std::endl;
 //    cells = gasDynamic(cells,
 //               Nx, Ny, Nz,
@@ -680,8 +693,8 @@ int main() {
 //            }
 //        }
 //    }
-    double*** result = convertRoToArray(cells, Nx, Ny, Nz);
-    VTSFormateer(result, Nx, Ny, Nz, x0, x1, y0, y1, z0, z1, 6, 4, "TestHeliumBubble.vts");
+    double*** convertedArray = convertRoToArray(cells, Nx, Ny, Nz);
+//    VTSFormateer(convertedArray, Nx, Ny, Nz, 6, 4, "TestHeliumBubble.vts");
 
 //    VTSFormateer(result, Nx, Ny, Nz, x0, x1, y0, y1, z0, z1, 6, 4, "TestGasDynamic.vts");
 //    VTSFormateer(result, Nx, Ny, Nz, x0, x1, y0, y1, z0, z1, 6, 4, "TestGasDynamic.vts");

@@ -5,6 +5,7 @@
 #include "functional"
 
 #include "Cell.h"
+#include "VTSFormater.h"
 
 template<class T>
 T* create1DArray(int n) {
@@ -407,7 +408,9 @@ T getAlpha(Point<T> firstCell, Point<T> secondCell) {
     T secondV = secondCell[2]/secondCell[0];
     T secondW = secondCell[3]/secondCell[0];
 
-    return std::max(sqrt(pow(firstU, 2) + pow(firstV, 2) + pow(firstW, 2)) + firstC, sqrt(pow(secondU, 2) + pow(secondV, 2) + pow(secondW, 2)) + secondC);
+    T result = std::max(sqrt(pow(firstU, 2) + pow(firstV, 2) + pow(firstW, 2)) + firstC, sqrt(pow(secondU, 2) + pow(secondV, 2) + pow(secondW, 2)) + secondC);
+
+    return result;
 }
 
 
@@ -442,7 +445,9 @@ Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
                 long int nx, long int ny, long int nz,
                 T hx, T hy, T hz,
                 T tau, T t0, T t1,
-                int paramCount
+                int paramCount,
+                long int printFileCount,
+                std::string filePrefix
 ) {
     T hx_2 = hx * hx;
     T koeffX = 0.5 * tau/hx;
@@ -455,9 +460,16 @@ Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
     Cell<Point<T>>*** bufLayer = copyArray(cells, nx, ny, nz);
 
     long int M = floor((t1 - t0) / tau + 1);
+    long int fileCount = 0;
 //    std::cout<<"All bad"<<std::endl;
+
+    std::cout<<t0<<" print to file"<<fileCount<<std::endl;
+    T*** convertedArray = convertRoToArray(curLayer, nx, ny, nz);
+    VTSFormateer(convertedArray, nx, ny, nz, 6, 4, filePrefix + std::to_string(fileCount) + ".vts");
+    delete3DArray(convertedArray, nx, ny);
+    fileCount++;
     for (int time = 0; time < M; time++) {
-//        std::cout<<"All bad:"<<time<<std::endl;
+        std::cout<<"All bad:"<<time<<std::endl;
 
         // F
         for (int i = 0; i < nx - 1; i++) {
@@ -471,12 +483,18 @@ Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
                         cur = curLayer[i][j][k];
                     }
 
+//                    std::cout<<i<<","<<j<<","<<k<<std::endl;
+//                    cur[0].print("CURR_CELL");
+
                     Cell<Point<T>> right;
                     if(curLayer[i+1][j][k].getType() == 2) {
                         right = getWall(curLayer[i][j][k], 0);
                     } else {
                         right = curLayer[i+1][j][k];
                     }
+
+//                    right[0].print("RIGHT_CELL");
+//                    std::cout<<"--------------------------"<<std::endl;
 
                     Point<T> Fcur = getF(cur);
                     Point<T> Fright = getF(right);
@@ -570,115 +588,31 @@ Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
             for(int j = 1; j < ny - 1; j++) {
                 for(int k = 1; k < nz - 1; k++) {
                     T ro = bufLayer[i][j][k][0][0];
+                    if(std::isnan(ro)) {
+                        std::cout<<"nan"<<std::endl;
+                    }
                     T roU = bufLayer[i][j][k][0][1];
                     T roV = bufLayer[i][j][k][0][2];
                     T roW = bufLayer[i][j][k][0][3];
                     T roE = bufLayer[i][j][k][0][4];
-                    bufLayer[i][j][k][0][5] = (roE - (pow(roU, 2) + pow(roV, 2) + pow(roW,2)) /(2*ro))*(0.4);
+                    T E = roE / ro;
+                    T e = E - (pow(roU, 2) + pow(roV, 2) + pow(roW,2)) / 2;
+                    T prev = bufLayer[i][j][k][0][5];
+                    T next = ro * e * 0.4;
+                    bufLayer[i][j][k][0][5] = next;
                 }
             }
         }
 
-
-
-//        for(int i = 0; i < nx; i++) {
-//            for(int j = 0; j < ny; j++) {
-//                for(int k = 0; k < nz; k++) {
-//                    Cell<Point<T>>& cell = cells[i][j][k];
-//
-//                    Cell<Point<T>>& xLeft = cell.getNeighbor(0);
-////                    if(xLeft.getType() == 2) {
-////                        xLeft = getNeighborInnerOrBoundary(cell, 0);
-////                    }
-//
-//                    Cell<Point<T>>& xRight = cell.getNeighbor(1);
-////                    if(xRight.getType() == 2) {
-////                        xRight = getNeighborInnerOrBoundary(cell, 1);
-////                    }
-//
-//                    Cell<Point<T>>& yLeft = cell.getNeighbor(2);
-////                    if(yLeft.getType() == 2) {
-////                         yLeft = getNeighborInnerOrBoundary(cell, 2);
-////                    }
-//
-//                    Cell<Point<T>>& yRight = cell.getNeighbor(3);
-////                    if(yRight.getType() == 2) {
-////                        yRight = getNeighborInnerOrBoundary(cell, 3);
-////                    }
-//
-//                    Cell<Point<T>>& zLeft = cell.getNeighbor(4);
-////                    if(zLeft.getType() == 2) {
-////                        zLeft = getNeighborInnerOrBoundary(cell, 4);
-////                    }
-//
-//                    Cell<Point<T>>& zRight = cell.getNeighbor(5);
-////                    if(zRight.getType() == 2) {
-////                        zRight = getNeighborInnerOrBoundary(cell, 5);
-////                    }
-//
-//                    // F
-//                    Point<T> Fcur = getF(cell);
-//                    Point<T> Fleft = getF(xLeft);
-//                    Point<T> Fright = getF(xRight);
-//
-//                    T FalphaLeft = getAlpha(xLeft[0], cell[0]);
-//                    T FalphaRight = getAlpha(cell[0], xRight[0]);
-//                    // G
-//                    Point<T> Gcur = getG(cell);
-//                    Point<T> Gleft = getG(yLeft);
-//                    Point<T> Gright = getG(yRight);
-//
-//                    T GalphaLeft = getAlpha(yLeft[0], cell[0]);
-//                    T GalphaRight = getAlpha(cell[0], yRight[0]);
-//                    // H
-//                    Point<T> Hcur = getH(cell);
-//                    Point<T> Hleft = getH(zLeft);
-//                    Point<T> Hright = getH(zRight);
-//
-//                    T HalphaLeft = getAlpha(zLeft[0], cell[0]);
-//                    T HalphaRight = getAlpha(cell[0], zRight[0]);
-//
-//                    Point<T> F_prev_2 = (Fcur + Fleft - ((cell[0] - xLeft[0]) * FalphaLeft))* koeffX;
-//                    Point<T> F_next_2 = (Fright + Fcur - (xRight[0] - cell[0]) * FalphaRight)* koeffX;
-//
-//                    Point<T> G_prev_2 = (Gcur +  Gleft - (cell[0] - yLeft[0]) * GalphaLeft)* koeffY;
-//                    Point<T> G_next_2 = (Gright + Gcur - (yRight[0] - cell[0]) * GalphaRight)* koeffY;
-//
-//                    Point<T> H_prev_2 = (Hcur + Hleft - (cell[0] - zLeft[0])* HalphaLeft)* koeffZ;
-//                    Point<T> H_next_2 = (Hright + Hcur - (zRight[0] - cell[0]) * HalphaRight)* koeffZ;
-//
-//                    xLeft[0]+=F_prev_2;
-//                    xRight[0]-=F_next_2;
-//
-//                    yLeft[0]+=G_prev_2;
-//                    yRight[0]-=G_next_2;
-//
-//                    zLeft[0]+=H_prev_2;
-//                    zRight[0]+=H_next_2;
-//                    // U
-//
-////                    Point<T> F1 = (cell - cell.getNeighbor(0))*koeffX;
-////                    Point<T> F2 = (cell.getNeighbor(1) - cell)*koeffX;
-////
-////                    Point<T> G1 = (cell - cell.getNeighbor(2))*koeffY;
-////                    Point<T> G2 = (cell.getNeighbor(3) - cell)*koeffY;
-////
-////                    Point<T> H1 = (cell - cell.getNeighbor(4))*koeffZ;
-////                    Point<T> H2 = (cell.getNeighbor(5) - cell)*koeffZ;
-////
-////                    cell.getNeighbor(0)+=F1;
-////                    cell.getNeighbor(1)-=F2;
-////
-////                    cell.getNeighbor(2)+=G1;
-////                    cell.getNeighbor(3)-=G2;
-////
-////                    cell.getNeighbor(4)+=H1;
-////                    cell.getNeighbor(5)-=H2;
-//                }
-//            }
-//        }
         delete3DArray(curLayer, nx, ny);
         curLayer = copyArray(bufLayer, nx, ny, nz);
+        if(time % printFileCount == 0) {
+            std::cout<<t0 + time * tau<<" print to file"<<fileCount<<std::endl;
+            T*** convertedArray = convertRoToArray(curLayer, nx, ny, nz);
+            VTSFormateer(convertedArray, nx, ny, nz, 6, 4, filePrefix + std::to_string(fileCount) + ".vts");
+            delete3DArray(convertedArray, nx, ny);
+            fileCount++;
+        }
     }
     delete3DArray(bufLayer, nx, ny);
     return curLayer;
