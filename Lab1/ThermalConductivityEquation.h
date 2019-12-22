@@ -5,6 +5,7 @@
 #include "functional"
 
 #include "Cell.h"
+#include "VTSFormater.h"
 
 template<class T>
 T* create1DArray(int n) {
@@ -436,12 +437,26 @@ const Cell<Point<T>> getWall(Cell<Point<T>>& cell, int neighborIndex) {
     return realNeighbor;
 }
 
+double*** convertRoToArray(Cell<Point<double>>*** cells, long int nx, long int ny, long int nz) {
+    double*** result = create3DArray<double>(nx, ny, nz);
+    for(int i = 0; i < nx; i++){
+        for(int j = 0; j < ny; j++) {
+            for(int k = 0; k < nz; k++) {
+                result[i][j][k] = cells[i][j][k][0][0];
+            }
+        }
+    }
+    return result;
+}
+
 template<class T>
 Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
                 long int nx, long int ny, long int nz,
                 T hx, T hy, T hz,
                 T tau, T t0, T t1,
-                int paramCount
+                int paramCount,
+                long int fileReadStepCount,
+                std::string filePrefix
 ) {
     T hx_2 = hx * hx;
     T koeffX = 0.5 * tau/hx;
@@ -453,6 +468,13 @@ Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
     Cell<Point<T>>*** curLayer = copyArray(cells, nx, ny, nz);
     Cell<Point<T>>*** bufLayer = copyArray(cells, nx, ny, nz);
 
+    long int fileCount = 0;
+    std::cout<<t0<<" print to file"<<fileCount<<std::endl;
+    T*** convertedArray = convertRoToArray(curLayer, nx, ny, nz);
+
+    VTSFormateer(convertedArray, nx, ny, nz, 6, 4, filePrefix + std::to_string(fileCount) + ".vts");
+    fileCount = 1;
+
     long int M = floor((t1 - t0) / tau + 1);
     for (int time = 0; time < M; time++) {
         std::cout<<"TimeStep:"<<time<<std::endl;
@@ -461,6 +483,7 @@ Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
         for (int i = 0; i < nx - 1; i++) {
             for (int j = 1; j < ny - 1; j++) {
                 for (int k = 1; k < nz - 1; k++) {
+
 
                     Cell<Point<T>> cur = curLayer[i][j][k];
                     Cell<Point<T>> right;
@@ -471,21 +494,43 @@ Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
                     }
 
                     if(cur.getType() == 2) {
-                        cur = getWall(right, 2);
+                        cur = getWall(right, 0);
                     }
 
                     Point<T> Fcur = getF(cur);
                     Point<T> Fright = getF(right);
 
                     T FalphaRight = getAlpha(cur[0], right[0]);
-                    Point<T> F = (Fright + Fcur - (right[0] - cur[0]) * FalphaRight)* koeffX;
+                    Cell<Point<T>> F = Cell<Point<T>>(1, (Fright* koeffX + Fcur* koeffX - (right[0] - cur[0]) * FalphaRight* koeffX), 3);
+
+                    if(i == 18 || i == 17) {
+                        if(j == 5 && k == 6) {
+                            std::cout<<i<<","<<j<<","<<k<<std::endl;
+                            cur[0].print("cur");
+                            right[0].print("right");
+                            Fcur.print("fcur");
+                            Fright.print("fright");
+                            std::cout<<"Falpharight:"<<FalphaRight<<std::endl;
+                            F[0].print("F");
+                        }
+                    }
                     if(i == 0) {
-                        bufLayer[i+1][j][k][0]+=F;
+                        bufLayer[i+1][j][k]+=F;
                     } else if(i == nx-2) {
-                        bufLayer[i][j][k][0]-=F;
+                        bufLayer[i][j][k]-=F;
                     } else {
-                        bufLayer[i+1][j][k][0]+=F;
-                        bufLayer[i][j][k][0]-=F;
+                        bufLayer[i+1][j][k]+=F;
+                        bufLayer[i][j][k][0].print("F ijk");
+                        bufLayer[i][j][k]-=F;
+                    }
+
+                    if(i == 18 || i == 17) {
+                        if(j == 5 && k == 6) {
+                            std::cout<<"curType"<<cur.getType()<<std::endl;
+                            std::cout<<"rightType"<<right.getType()<<std::endl;
+                            bufLayer[i+1][j][k][0].print("right next:");
+                            bufLayer[i][j][k][0].print("cur next");
+                        }
                     }
                 }
             }
@@ -505,21 +550,39 @@ Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
                     }
 
                     if(cur.getType() == 2) {
-                        cur = getWall(right, 4);
+                        cur = getWall(right, 2);
                     }
 
                     Point<T> Gcur = getG(cur);
                     Point<T> Gright = getG(right);
 
                     T GalphaRight = getAlpha(cur[0], right[0]);
-                    Point<T> G = (Gright + Gcur - (right[0] - cur[0]) * GalphaRight)* koeffY;
+                    Cell<Point<T>> G = Cell<Point<T>>(1, (Gright* koeffY + Gcur* koeffY - (right[0] - cur[0]) * GalphaRight* koeffY), 3);
+                    if(j == 5 || j == 4) {
+                        if(i == 18 && k == 6) {
+                            std::cout<<i<<","<<j<<","<<k<<std::endl;
+                            cur[0].print("cur");
+                            right[0].print("right");
+                            Gcur.print("gCur");
+                            Gright.print("gright");
+                            std::cout<<"GalphaRight:"<<GalphaRight<<std::endl;
+                            G[0].print("G");
+                        }
+                    }
                     if(j == 0) {
-                        bufLayer[i][j+1][k][0]+=G;
+                        bufLayer[i][j+1][k]+=G;
                     } else if(j == ny - 2) {
-                        bufLayer[i][j][k][0]-=G;
+                        bufLayer[i][j][k]-=G;
                     } else {
-                        bufLayer[i][j+1][k][0]+=G;
-                        bufLayer[i][j][k][0]-=G;
+                        bufLayer[i][j+1][k]+=G;
+                        bufLayer[i][j][k][0].print("G ijk");
+                        bufLayer[i][j][k]-=G;
+                    }
+                    if(j == 5 || j == 4) {
+                        if(i == 18 && k == 6) {
+                            bufLayer[i][j+1][k][0].print("right next");
+                            bufLayer[i][j][k][0].print("cur next");
+                        }
                     }
                 }
             }
@@ -539,20 +602,38 @@ Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
                     }
 
                     if(cur.getType() == 2) {
-                        cur = getWall(right, 6);
+                        cur = getWall(right, 4);
                     }
                     Point<T> Hcur = getH(cur);
                     Point<T> Hright = getH(right);
 
                     T HalphaRight = getAlpha(cur[0], right[0]);
-                    Point<T> H = (Hright + Hcur - (right[0] - cur[0]) * HalphaRight)* koeffZ;
+                    Cell<Point<T>> H = Cell<Point<T>>(1, (Hright * koeffZ + Hcur * koeffZ - (right[0] - cur[0]) * HalphaRight * koeffZ), 3);
+                    if(k == 6 || k == 5) {
+                        if(i == 18 && j == 5) {
+                            std::cout<<i<<","<<j<<","<<k<<std::endl;
+                            cur[0].print("cur");
+                            right[0].print("right");
+                            Hcur.print("hCur");
+                            Hright.print("hright");
+                            std::cout<<"HalphaRight:"<<HalphaRight<<std::endl;
+                            H[0].print("H");
+                        }
+                    }
                     if(k == 0) {
-                        bufLayer[i][j][k+1][0]+=H;
+                        bufLayer[i][j][k+1]+=H;
                     } else if(k == nz - 2) {
-                        bufLayer[i][j][k][0]-=H;
+                        bufLayer[i][j][k]-=H;
                     } else {
-                        bufLayer[i][j][k+1][0]+=H;
-                        bufLayer[i][j][k][0]-=H;
+                        bufLayer[i][j][k+1]+=H;
+                        bufLayer[i][j][k][0].print("H ijk");
+                        bufLayer[i][j][k]-=H;
+                    }
+                    if(k == 6 || k == 5) {
+                        if(i == 18 && j == 5) {
+                            bufLayer[i][j][k+1][0].print("right next");
+                            bufLayer[i][j][k][0].print("cur next");
+                        }
                     }
                 }
             }
@@ -562,16 +643,25 @@ Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
             for(int j = 1; j < ny - 1; j++) {
                 for(int k = 1; k < nz - 1; k++) {
                     T ro = bufLayer[i][j][k][0][0];
-                    T roU = bufLayer[i][j][k][0][1];
-                    T roV = bufLayer[i][j][k][0][2];
-                    T roW = bufLayer[i][j][k][0][3];
-                    T roE = bufLayer[i][j][k][0][4];
-                    bufLayer[i][j][k][0][5] = (roE - (pow(roU, 2) + pow(roV, 2) + pow(roW,2)) /(2*ro))*(0.4);
+                    T u = bufLayer[i][j][k][0][1] / ro;
+                    T v = bufLayer[i][j][k][0][2] / ro;
+                    T w = bufLayer[i][j][k][0][3] / ro;
+                    T E = bufLayer[i][j][k][0][4] / ro;
+                    T p = ro * (E - (pow(u, 2) + pow(v, 2) + pow(w, 2)) / 2) * 0.4;
+                    bufLayer[i][j][k][0][5] = p;
                 }
             }
         }
         delete3DArray(curLayer, nx, ny);
         curLayer = copyArray(bufLayer, nx, ny, nz);
+
+        if(time % fileReadStepCount == 0) {
+            std::cout<<t0 + time * tau<<" print to file"<<fileCount<<std::endl;
+            T*** convertedArray = convertRoToArray(curLayer, nx, ny, nz);
+            VTSFormateer(convertedArray, nx, ny, nz, 6, 4, filePrefix + std::to_string(fileCount) + ".vts");
+            delete3DArray(convertedArray, nx, ny);
+            fileCount++;
+        }
     }
     delete3DArray(bufLayer, nx, ny);
     return curLayer;

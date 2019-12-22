@@ -89,6 +89,13 @@ public:
         return isIn() || isOut() || isWall();
     }
 
+    inline Cell<T>& operator =(const Cell<T>& x) {
+        if(this->isInner()) {
+            Point<T>::operator=(x);
+        }
+        return (*this);
+    }
+
     inline Cell<T>& operator =(const Point<T>& x) {
         if(this->isInner()) {
             Point<T>::operator=(x);
@@ -96,7 +103,7 @@ public:
         return (*this);
     }
 
-    inline const Cell<T> operator =(const T& scalar) const {
+    inline Cell<T>& operator =(const T& scalar) const {
         if(this->isInner()) {
             Point<T>::operator=(scalar);
         }
@@ -129,6 +136,11 @@ public:
             Point<T>::operator-=(x);
         }
         return (*this);
+    }
+
+    inline const Cell<T> operator - (const Cell<T>& x) {
+        Point<T> res = Point<T>::operator-(x);
+        return Cell<T>(res.length(), Point<T>::toArray(res), this->getType());
     }
 
     void addNeighbor(Cell<T>* neighbor) {

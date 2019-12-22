@@ -131,8 +131,8 @@ class Point {
         for(int i = 0; i < n; i++)
             coeffs[i]*=scalar;
         return *this;
-    }    
-    
+    }
+
     inline const Point<T> operator /(const T& scalar) const{
         Point<T> res(*this);
         if(scalar != 0) {
@@ -170,10 +170,10 @@ class Point {
         return res;
     }
 
-    inline const Point<T> operator -=(const Point<T>& x) {
+    inline Point<T>& operator -=(const Point<T>& x) {
         for(int i = 0; i < x.length(); i++)
             coeffs[i]-=x[i];
-        return Point(*this);
+        return *this;
     }
 
     inline void print(std::string name, int countOfNumbers=0, int precision=0) const {
