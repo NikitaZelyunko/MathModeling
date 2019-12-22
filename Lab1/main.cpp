@@ -255,7 +255,6 @@ Cell<Point<T>>*** generateGasCells(
         }
     }
     Cell<Point<T>>& nullCell = *(new Cell<Point<T>>(1, Point<T>(paramCount, 0.0), 1));
-//    solveNeighbors<Point<T>>(curLayer, nullCell, nx, ny, nz, paramCount);
     return curLayer;
 }
 
@@ -323,6 +322,14 @@ void printSodP(Cell<Point<double>>*** cells, int nx, int ny, int nz, double x0, 
     file.close();
 }
 
+void printSodRo(Cell<Point<double>>*** cells, int nx, int ny, int nz, double x0, double y0, double z0, double hx, double hy, double hz, std::string filename) {
+    std::ofstream file(filename);
+    for(int i = 0; i < nx; i++) {
+        file<<std::fixed<<std::setw(6)<<std::setprecision(5)<<x0 + hx*i<<" "<<cells[i][1][1][0][0]<<std::endl;
+    }
+    file.close();
+}
+
 
 int main() {
     long int Nx = 200;
@@ -339,66 +346,18 @@ int main() {
     double hmin = std::min(std::min(hx, hy), hz);
 
     double tau = pow(hmin,2);
-//    double tau = 2.5 / 100000;
     double t0 = 0; double t1 = 0.2;
-
-//    double ***result = Reshenie_Uravn_Teploprovodnosti_methodom_progonki_yavn<double>(
-//        Nx,
-//        x0, x1,
-//        y0, y1,
-//        z0, z1,
-//        tau, t0, t1
-//    );
-//
-//    VTSFormateer(result, Nx, Ny, Nz, x0, x1, y0, y1, z0, z1, "Result1.vts");
-//
-//    double ***result2 = Reshenie_Uravn_Teploprovodnosti_flux<double>(
-//            Nx,
-//            x0, x1,
-//            y0, y1,
-//            z0, z1,
-//            tau, t0, t1
-//    );
-//    VTSFormateer(result, Nx, Ny, Nz, x0, x1, y0, y1, z0, z1, "Result2.vts");
-
-//    Cell<double>*** cells = generateThermalCells(
-//                Nx, Ny, Nz,
-//                hx, hy, hz,
-//                tau, t0, t1, 1
-//            );
-//    std::cout<<"All right"<<std::endl;
-//    gasDynamic(cells,
-//            Nx, Ny, Nz,
-//            hx, hy, hz,
-//            tau, t0, t1,
-//            1);
-//    std::cout<<"All right"<<std::endl;
-//    double*** result = convertToArray(cells, Nx, Ny, Nz);
-//
-//    VTSFormateer(result, Nx, Ny, Nz, x0, x1, y0, y1, z0, z1, "TestGasDynamic.vts");
-//
-//    std::cout << "RESULT SOLVE" << std::endl;
 
     Cell<Point<double>>*** cells = generateGasCells(
             Nx, Ny, Nz,
             hx, hy, hz,
             tau, t0, t1, 6
     );
-    std::cout<<"All right"<<std::endl;
     cells = gasDynamic(cells,
                Nx, Ny, Nz,
                hx, hy, hz,
                tau, t0, t1,
                1);
-    std::cout<<"All right"<<std::endl;
-    for(int i=0; i < Nx; i++) {
-        for(int j = 0; j < Ny; j++) {
-            for(int k = 0; k < Nz; k++) {
-                std::cout<<i<<","<<j<<","<<k;
-                cells[i][j][k][0].print("u:");
-            }
-        }
-    }
     double*** result = convertToArray(cells, Nx, Ny, Nz);
 
 
@@ -408,35 +367,8 @@ int main() {
     printSodW(cells, Nx, Ny, Nz, x0, y0, z0, hx, hy, hz, "W.txt");
     printSodE(cells, Nx, Ny, Nz, x0, y0, z0, hx, hy, hz, "E.txt");
     printSodP(cells, Nx, Ny, Nz, x0, y0, z0, hx, hy, hz, "P.txt");
+    printSodRo(cells, Nx, Ny, Nz, x0, y0, z0, hx, hy, hz, "Ro.txt");
 
     std::cout << "RESULT SOLVE" << std::endl;
-//    double ***tochn = create3DArray<double>(N, N, N);
-//    double ***razn = create3DArray<double>(N, N, N);
-//    for (int i = 0; i < N; i++) {
-//        for (int j = 0; j < N; j++) {
-//            for (int k = 0; k < N; k++) {
-//                tochn[i][j][k] = pow(2.7, -3 * pow(3.14, 2) * t1) * sin(3.14 * (x0 + i*h)) * sin(3.14 * (y0 + j*h)) * sin(3.14 * (z0 + k*h));
-//
-//
-//                razn[i][j][k] = 0;
-//            }
-//        }
-//    }
-//    for (int i = 1; i < N - 1; i++) {
-//        for (int j = 1; j < N - 1; j++) {
-//            for (int k = 1; k < N - 1; k++) {
-//                razn[i][j][k] = abs(result[i][j][k] - tochn[i][j][k]);
-//                if (razn[i][j][k] > 0.1) {
-//                    std::cout << i << "," << j << "," << k << " " << result[i][j][k] << " " << tochn[i][j][k] << std::endl;
-//                }
-//            }
-//        }
-//    }
-//    printCSV(result, N, x0, x1, y0, y1, z0, z1, "resultFlux.csv");
-//    printCSV(tochn, N, x0, x1, y0, y1, z0, z1, "tochnFlux.csv");
-//    printCSV(razn, N, x0, x1, y0, y1, z0, z1, "raznFlux.csv");
-//    delete3DArray(result, Nx, Ny);
-//    delete3DArray(tochn, N, N);
-//    delete3DArray(razn, N, N);
     return 0;
 }
