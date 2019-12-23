@@ -109,13 +109,13 @@ class Point {
 
     inline Point<T>& operator =(const Point<T>& x) {
         n = x.n;
-        delete coeffs;
+        delete[] coeffs;
         coeffs = copyArray(x.coeffs, x.n);
         return *this;
     }
 
     inline const Point<T> operator =(const T& scalar) const {
-        delete coeffs;
+        delete[] coeffs;
         fillCoeffs(scalar);
         return *this;
     }

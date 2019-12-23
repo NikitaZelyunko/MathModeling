@@ -471,7 +471,7 @@ Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
                     }
 
                     if(cur.getType() == 2) {
-                        cur = getWall(right, 2);
+                        cur = getWall(right, 0);
                     }
 
                     Point<T> Fcur = getF(cur);
@@ -505,7 +505,7 @@ Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
                     }
 
                     if(cur.getType() == 2) {
-                        cur = getWall(right, 4);
+                        cur = getWall(right, 2);
                     }
 
                     Point<T> Gcur = getG(cur);
@@ -539,7 +539,7 @@ Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
                     }
 
                     if(cur.getType() == 2) {
-                        cur = getWall(right, 6);
+                        cur = getWall(right, 4);
                     }
                     Point<T> Hcur = getH(cur);
                     Point<T> Hright = getH(right);
