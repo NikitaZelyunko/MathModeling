@@ -282,6 +282,7 @@ double*** convertToArray(Cell<Point<double>>*** cells, long int nx, long int ny,
     return result;
 }
 
+
 void printSodU(Cell<Point<double>>*** cells, int nx, int ny, int nz, double x0, double y0, double z0, double hx, double hy, double hz, std::string filename) {
     std::ofstream file(filename);
     for(int i = 0; i < nx; i++) {
@@ -332,9 +333,9 @@ void printSodRo(Cell<Point<double>>*** cells, int nx, int ny, int nz, double x0,
 
 
 int main() {
-    long int Nx = 200;
-    long int Ny = 3;
-    long int Nz = 3;
+    long int Nx = 100;
+    long int Ny = 5;
+    long int Nz = 5;
     double x0 = 0; double x1 = 1;
     double y0 = 0; double y1 = 1;
     double z0 = 0; double z1 = 1;
@@ -355,9 +356,14 @@ int main() {
     );
     cells = gasDynamic(cells,
                Nx, Ny, Nz,
+               x0, x1,
+               y0, y1,
+               z0, z1,
                hx, hy, hz,
                tau, t0, t1,
-               1);
+               1,
+               100,
+               "Sod");
     double*** result = convertToArray(cells, Nx, Ny, Nz);
 
 

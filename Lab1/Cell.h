@@ -90,42 +90,42 @@ public:
     }
 
     inline Cell<T>& operator =(const Point<T>& x) {
-        if(this->isInner()) {
+        if(this->isInner() || this->isOut() || this->isWall()) {
             Point<T>::operator=(x);
         }
         return (*this);
     }
 
     inline const Cell<T> operator =(const T& scalar) const {
-        if(this->isInner()) {
+        if(this->isInner() || this->isOut() || this->isWall()) {
             Point<T>::operator=(scalar);
         }
         return (*this);
     }
 
     inline Cell<T>& operator *=(const T& scalar) {
-        if(this->isInner()) {
+        if(this->isInner() || this->isOut() || this->isWall()) {
             Point<T>::operator*=(scalar);
         }
         return (*this);
     }
 
     inline const Cell<T> operator /=(const T& scalar) {
-        if(this->isInner()) {
+        if(this->isInner() || this->isOut() || this->isWall()) {
             Point<T>::operator/=(scalar);
         }
         return (*this);
     }
 
     inline Cell<T>& operator +=(const Point<T>& x) {
-        if(this->isInner()) {
+        if(this->isInner() || this->isOut() || this->isWall()) {
             Point<T>::operator+=(x);
         }
         return (*this);
     }
 
     inline const Cell<T> operator -=(const Point<T>& x) {
-        if(this->isInner()) {
+        if(this->isInner() || this->isOut() || this->isWall()) {
             Point<T>::operator-=(x);
         }
         return (*this);

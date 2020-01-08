@@ -5,6 +5,7 @@
 #include "functional"
 
 #include "Cell.h"
+#include "VTSFormater.h"
 
 template<class T>
 T* create1DArray(int n) {
@@ -433,15 +434,34 @@ const Cell<Point<T>> getWall(Cell<Point<T>>& cell, int neighborIndex) {
             realNeighbor[0][3] *=-1;
         } break;
     }
+    realNeighbor.setType(2);
     return realNeighbor;
+}
+
+template <class T>
+T*** convertRoToArray(Cell<Point<T>>*** cells, long int nx, long int ny, long int nz) {
+    T*** result = create3DArray<double>(nx, ny, nz);
+    for(int i = 0; i < nx; i++){
+        for(int j = 0; j < ny; j++) {
+            for(int k = 0; k < nz; k++) {
+                result[i][j][k] = cells[i][j][k][0][0];
+            }
+        }
+    }
+    return result;
 }
 
 template<class T>
 Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
                 long int nx, long int ny, long int nz,
+                T x0, T x1,
+                T y0, T y1,
+                T z0, T z1,
                 T hx, T hy, T hz,
                 T tau, T t0, T t1,
-                int paramCount
+                int paramCount,
+                long int printToFileCount,
+                std::string filePrefix
 ) {
     T hx_2 = hx * hx;
     T koeffX = 0.5 * tau/hx;
@@ -452,6 +472,12 @@ Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
 
     Cell<Point<T>>*** curLayer = copyArray(cells, nx, ny, nz);
     Cell<Point<T>>*** bufLayer = copyArray(cells, nx, ny, nz);
+
+    int fileCount = 0;
+    T*** result = convertRoToArray(bufLayer, nx, ny, nz);
+    VTSFormateer(result, nx, ny, nz, x0, x1, y0, y1, z0, z1, 6, 4, filePrefix + std::to_string(fileCount) + ".vts");
+    delete3DArray(result, nx, ny);
+    fileCount++;
 
     long int M = floor((t1 - t0) / tau + 1);
     for (int time = 0; time < M; time++) {
@@ -479,13 +505,24 @@ Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
 
                     T FalphaRight = getAlpha(cur[0], right[0]);
                     Point<T> F = (Fright + Fcur - (right[0] - cur[0]) * FalphaRight)* koeffX;
-                    if(i == 0) {
-                        bufLayer[i+1][j][k][0]+=F;
-                    } else if(i == nx-2) {
-                        bufLayer[i][j][k][0]-=F;
-                    } else {
-                        bufLayer[i+1][j][k][0]+=F;
-                        bufLayer[i][j][k][0]-=F;
+                    if(right.isOut()) {
+                        bufLayer[i+1][j][k] = cur;
+                    } else if(right.isWall()) {
+                        bufLayer[i+1][j][k] = right;
+                    } else if(cur.isOut()) {
+                        bufLayer[i][j][k] = right;
+                    } else if(cur.isWall()) {
+                        bufLayer[i][j][k] = cur;
+                    }
+                    else {
+                        if(i == 0) {
+                            bufLayer[i+1][j][k][0]+=F;
+                        } else if(i == nx-2) {
+                            bufLayer[i][j][k][0]-=F;
+                        } else {
+                            bufLayer[i+1][j][k][0]+=F;
+                            bufLayer[i][j][k][0]-=F;
+                        }
                     }
                 }
             }
@@ -513,13 +550,24 @@ Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
 
                     T GalphaRight = getAlpha(cur[0], right[0]);
                     Point<T> G = (Gright + Gcur - (right[0] - cur[0]) * GalphaRight)* koeffY;
-                    if(j == 0) {
-                        bufLayer[i][j+1][k][0]+=G;
-                    } else if(j == ny - 2) {
-                        bufLayer[i][j][k][0]-=G;
-                    } else {
-                        bufLayer[i][j+1][k][0]+=G;
-                        bufLayer[i][j][k][0]-=G;
+                    if(right.isOut()) {
+                        bufLayer[i][j+1][k] = cur;
+                    } else if(right.isWall()) {
+                        bufLayer[i][j+1][k] = right;
+                    } else if(cur.isOut()) {
+                        bufLayer[i][j][k] = right;
+                    } else if(cur.isWall()) {
+                        bufLayer[i][j][k] = cur;
+                    }
+                    else {
+                        if (j == 0) {
+                            bufLayer[i][j + 1][k][0] += G;
+                        } else if (j == ny - 2) {
+                            bufLayer[i][j][k][0] -= G;
+                        } else {
+                            bufLayer[i][j + 1][k][0] += G;
+                            bufLayer[i][j][k][0] -= G;
+                        }
                     }
                 }
             }
@@ -546,13 +594,24 @@ Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
 
                     T HalphaRight = getAlpha(cur[0], right[0]);
                     Point<T> H = (Hright + Hcur - (right[0] - cur[0]) * HalphaRight)* koeffZ;
-                    if(k == 0) {
-                        bufLayer[i][j][k+1][0]+=H;
-                    } else if(k == nz - 2) {
-                        bufLayer[i][j][k][0]-=H;
-                    } else {
-                        bufLayer[i][j][k+1][0]+=H;
-                        bufLayer[i][j][k][0]-=H;
+                    if(right.isOut()) {
+                        bufLayer[i][j][k+1] = cur;
+                    } else if(right.isWall()) {
+                        bufLayer[i][j][k+1] = right;
+                    } else if(cur.isOut()) {
+                        bufLayer[i][j][k] = right;
+                    } else if(cur.isWall()) {
+                        bufLayer[i][j][k] = cur;
+                    }
+                    else {
+                        if (k == 0) {
+                            bufLayer[i][j][k + 1][0] += H;
+                        } else if (k == nz - 2) {
+                            bufLayer[i][j][k][0] -= H;
+                        } else {
+                            bufLayer[i][j][k + 1][0] += H;
+                            bufLayer[i][j][k][0] -= H;
+                        }
                     }
                 }
             }
@@ -572,6 +631,13 @@ Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
         }
         delete3DArray(curLayer, nx, ny);
         curLayer = copyArray(bufLayer, nx, ny, nz);
+
+        if(time % printToFileCount == 0) {
+            result = convertRoToArray(bufLayer, nx, ny, nz);
+            VTSFormateer(result, nx, ny, nz, x0, x1, y0, y1, z0, z1, 6, 4, filePrefix + std::to_string(fileCount) + ".vts");
+            delete3DArray(result, nx, ny);
+            fileCount++;
+        }
     }
     delete3DArray(bufLayer, nx, ny);
     return curLayer;
