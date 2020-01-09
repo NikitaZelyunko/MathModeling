@@ -5,6 +5,7 @@
 #include "functional"
 
 #include "Cell.h"
+#include "VTSFormater.h"
 
 template<class T>
 T* create1DArray(int n) {
@@ -411,7 +412,7 @@ T getAlpha(Point<T> firstCell, Point<T> secondCell) {
 
 
 template<class T>
-const Cell<Point<T>> getWall(Cell<Point<T>>& cell, int neighborIndex) {
+Cell<Point<T>> getWall(Cell<Point<T>>& cell, int neighborIndex) {
     Cell<Point<T>> realNeighbor = cell;
     switch (neighborIndex) {
         case 0: {
@@ -436,12 +437,230 @@ const Cell<Point<T>> getWall(Cell<Point<T>>& cell, int neighborIndex) {
     return realNeighbor;
 }
 
+template <class T>
+void optimizedGetWall(Cell<Point<T>>& cell, int neighborIndex, Cell<Point<T>>& result) {
+    result = cell;
+    switch (neighborIndex) {
+        case 0: {
+            result[0][1] *=-1;
+        } break;
+        case 1: {
+            result[0][1] *=-1;
+        } break;
+        case 2: {
+            result[0][2] *=-1;
+        } break;
+        case 3: {
+            result[0][2] *=-1;
+        } break;
+        case 4: {
+            result[0][3] *=-1;
+        } break;
+        case 5: {
+            result[0][3] *=-1;
+        } break;
+    }
+}
+
+//template <class T>
+//void solveXDirection(
+//        Cell<Point<T>>*** curLayer,
+//        Cell<Point<T>>*** bufLayer,
+//        long int i, long int j, long int k,
+//        long int nx,
+//        int paramCount,
+//        T koeffX
+//        ) {
+//        Cell<Point<T>>& cur = curLayer[i][j][k];
+//        Cell<Point<T>> right;
+//
+//        if(i == 0) {
+//            Cell<Point<T>>& left = cur.getNeighbor(0);
+//
+//            Point<T> Fleft = getF(left);
+//            Point<T> Fcur = getF(cur);
+//
+//            T Falpha = getAlpha(left[0], cur[0]);
+//            Point<T> F = (Fcur + Fleft - (cur[0] - left[0]) * Falpha)* koeffX;
+//            bufLayer[i][j][k][0]+=F;
+//        }
+//
+//        if(i == nx - 1) {
+//            right = cur.getNeighbor(0);
+//        } else {
+//            right = curLayer[i+1][j][k];
+//        }
+//
+//        Point<T> Fcur = getF(cur);
+//        Point<T> Fright = getF(right);
+//
+//        T FalphaRight = getAlpha(cur[0], right[0]);
+//        Point<T> F = (Fright + Fcur - (right[0] - cur[0]) * FalphaRight)* koeffX;
+//
+//        if(i == nx-1) {
+//            bufLayer[i][j][k][0]-=F;
+//        } else {
+//            bufLayer[i+1][j][k][0]+=F;
+//            bufLayer[i][j][k][0]-=F;
+//        }
+//}
+
+template <class T>
+void solveYDirection(
+        Cell<Point<T>>*** curLayer,
+        Cell<Point<T>>*** bufLayer,
+        long int i, long int j, long int k,
+        long int ny,
+        int paramCount,
+        T koeffY
+) {
+    Cell<Point<T>>& cur = curLayer[i][j][k];
+    Cell<Point<T>> right;
+
+    if(j == 0) {
+        Cell<Point<T>> left;
+        optimizedGetWall(cur, 2, left);
+
+        Point<T> Gleft = getG(left);
+        Point<T> Gcur = getG(cur);
+
+        T GalphaRight = getAlpha(left[0], cur[0]);
+        Point<T> G = (Gcur + Gleft - (cur[0] - left[0]) * GalphaRight)* koeffY;
+
+        bufLayer[i][j][k][0]+=G;
+    }
+
+    if(j == ny - 1) {
+        optimizedGetWall(cur, 3, right);
+    } else {
+        right = curLayer[i][j+1][k];
+    }
+
+    Point<T> Gcur = getG(cur);
+    Point<T> Gright = getG(right);
+
+    T GalphaRight = getAlpha(cur[0], right[0]);
+    Point<T> G = (Gright + Gcur - (right[0] - cur[0]) * GalphaRight)* koeffY;
+
+    if(j == ny-1) {
+        bufLayer[i][j][k][0]-=G;
+    } else {
+        bufLayer[i][j+1][k][0]+=G;
+        bufLayer[i][j][k][0]-=G;
+    }
+}
+
+template <class T>
+void solveZDirection(
+        Cell<Point<T>>*** curLayer,
+        Cell<Point<T>>*** bufLayer,
+        long int i, long int j, long int k,
+        long int nz,
+        int paramCount,
+        T koeffZ
+) {
+    Cell<Point<T>>& cur = curLayer[i][j][k];
+    Cell<Point<T>> right;
+
+    if(k == 0) {
+        Cell<Point<T>> left;
+        optimizedGetWall(cur, 4, left);
+
+        Point<T> Hleft = getH(left);
+        Point<T> Hcur = getH(cur);
+
+        T HalphaRight = getAlpha(left[0], cur[0]);
+        Point<T> H = (Hcur + Hleft - (cur[0] - left[0]) * HalphaRight)* koeffZ;
+
+        bufLayer[i][j][k][0]+=H;
+    }
+
+    if(k == nz - 1) {
+        optimizedGetWall(cur, 5, right);
+    } else {
+        right = curLayer[i][j][k+1];
+    }
+
+    Point<T> Hcur = getH(cur);
+    Point<T> Hright = getH(right);
+
+    T HalphaRight = getAlpha(cur[0], right[0]);
+    Point<T> H = (Hright + Hcur - (right[0] - cur[0]) * HalphaRight)* koeffZ;
+
+    if(k == nz-1) {
+        bufLayer[i][j][k][0]-=H;
+    } else {
+        bufLayer[i][j][k+1][0]+=H;
+        bufLayer[i][j][k][0]-=H;
+    }
+}
+
+template <class T>
+void solveXDirection(
+        Cell<Point<T>>*** curLayer,
+        Cell<Point<T>>*** bufLayer,
+        long int i, long int j, long int k,
+        long int nx,
+        int paramCount,
+        T koeffX
+) {
+    Cell<Point<T>>& cur = curLayer[i][j][k];
+    Cell<Point<T>> right;
+
+    if(i == 0) {
+        Cell<Point<T>>& left = cur.getNeighbor(0);
+
+        Point<T> Fleft = getF(left);
+        Point<T> Fcur = getF(cur);
+
+        T Falpha = getAlpha(left[0], cur[0]);
+        Point<T> F = (Fcur + Fleft - (cur[0] - left[0]) * Falpha)* koeffX;
+        bufLayer[i][j][k][0]+=F;
+    }
+
+    if(i == nx - 1) {
+        right = cur;
+    } else {
+        right = curLayer[i+1][j][k];
+    }
+
+    Point<T> Fcur = getF(cur);
+    Point<T> Fright = getF(right);
+
+    T FalphaRight = getAlpha(cur[0], right[0]);
+    Point<T> F = (Fright + Fcur - (right[0] - cur[0]) * FalphaRight)* koeffX;
+
+    if(i == nx-1) {
+        bufLayer[i][j][k][0]-=F;
+    } else {
+        bufLayer[i+1][j][k][0]+=F;
+        bufLayer[i][j][k][0]-=F;
+    }
+}
+
+double*** convertRoToArray(Cell<Point<double>>*** cells, long int nx, long int ny, long int nz) {
+    double*** result = create3DArray<double>(nx, ny, nz);
+    for(int i = 0; i < nx; i++){
+        for(int j = 0; j < ny; j++) {
+            for(int k = 0; k < nz; k++) {
+                result[i][j][k] = cells[i][j][k][0][0];
+            }
+        }
+    }
+    return result;
+}
+
 template<class T>
 Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
                 long int nx, long int ny, long int nz,
+                T x0, T x1,
+                T y0, T y1,
+                T z0, T z1,
                 T hx, T hy, T hz,
                 T tau, T t0, T t1,
-                int paramCount
+                int paramCount,
+                int printFileCount,
+                std::string filePrefix
 ) {
     T hx_2 = hx * hx;
     T koeffX = 0.5 * tau/hx;
@@ -453,114 +672,51 @@ Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
     Cell<Point<T>>*** curLayer = copyArray(cells, nx, ny, nz);
     Cell<Point<T>>*** bufLayer = copyArray(cells, nx, ny, nz);
 
+    long int fileCount = 0;
+    std::cout<<t0<<" print to file"<<fileCount<<std::endl;
+    T*** convertedArray = convertRoToArray(curLayer, nx, ny, nz);
+
+    VTSFormateer(convertedArray, nx, ny, nz, x0, x1, y0, y1, z0, z1, 6, 4, filePrefix + std::to_string(fileCount) + ".vts");
+    fileCount = 1;
+
+
     long int M = floor((t1 - t0) / tau + 1);
     for (int time = 0; time < M; time++) {
         std::cout<<"TimeStep:"<<time<<std::endl;
 
         // F
-        for (int i = 0; i < nx - 1; i++) {
-            for (int j = 1; j < ny - 1; j++) {
-                for (int k = 1; k < nz - 1; k++) {
 
-                    Cell<Point<T>> cur = curLayer[i][j][k];
-                    Cell<Point<T>> right;
-                    if(curLayer[i+1][j][k].getType() == 2) {
-                        right = getWall(cur, 1);
-                    } else {
-                        right = curLayer[i+1][j][k];
-                    }
-
-                    if(cur.getType() == 2) {
-                        cur = getWall(right, 0);
-                    }
-
-                    Point<T> Fcur = getF(cur);
-                    Point<T> Fright = getF(right);
-
-                    T FalphaRight = getAlpha(cur[0], right[0]);
-                    Point<T> F = (Fright + Fcur - (right[0] - cur[0]) * FalphaRight)* koeffX;
-                    if(i == 0) {
-                        bufLayer[i+1][j][k][0]+=F;
-                    } else if(i == nx-2) {
-                        bufLayer[i][j][k][0]-=F;
-                    } else {
-                        bufLayer[i+1][j][k][0]+=F;
-                        bufLayer[i][j][k][0]-=F;
-                    }
+        for (int j = 0; j < ny; j++) {
+            for (int i = 0; i < nx; i++) {
+                for (int k = 0; k < nz; k++) {
+                    solveXDirection(curLayer, bufLayer, i, j, k, nx, paramCount, koeffX);
                 }
             }
         }
 
         // G
 
-        for (int j = 0; j < ny - 1; j++) {
-            for (int i = 1; i < nx - 1; i++) {
-                for (int k = 1; k < nz - 1; k++) {
-                    Cell<Point<T>> cur = curLayer[i][j][k];
-                    Cell<Point<T>> right;
-                    if(curLayer[i][j+1][k].getType() == 2) {
-                        right = getWall(cur, 3);
-                    } else {
-                        right = curLayer[i][j+1][k];
-                    }
-
-                    if(cur.getType() == 2) {
-                        cur = getWall(right, 2);
-                    }
-
-                    Point<T> Gcur = getG(cur);
-                    Point<T> Gright = getG(right);
-
-                    T GalphaRight = getAlpha(cur[0], right[0]);
-                    Point<T> G = (Gright + Gcur - (right[0] - cur[0]) * GalphaRight)* koeffY;
-                    if(j == 0) {
-                        bufLayer[i][j+1][k][0]+=G;
-                    } else if(j == ny - 2) {
-                        bufLayer[i][j][k][0]-=G;
-                    } else {
-                        bufLayer[i][j+1][k][0]+=G;
-                        bufLayer[i][j][k][0]-=G;
-                    }
+        for (int j = 0; j < ny; j++) {
+            for (int i = 0; i < nx; i++) {
+                for (int k = 0; k < nz; k++) {
+                    solveYDirection(curLayer, bufLayer, i, j, k, ny, paramCount, koeffY);
                 }
             }
         }
 
         // H
 
-        for (int k = 0; k < nz - 1; k++) {
-            for (int j = 1; j < ny - 1; j++) {
-                for (int i = 1; i < nx - 1; i++) {
-                    Cell<Point<T>> cur = curLayer[i][j][k];
-                    Cell<Point<T>> right;
-                    if(curLayer[i][j][k+1].getType() == 2) {
-                        right = getWall(cur, 5);
-                    } else {
-                        right = curLayer[i][j][k+1];
-                    }
-
-                    if(cur.getType() == 2) {
-                        cur = getWall(right, 4);
-                    }
-                    Point<T> Hcur = getH(cur);
-                    Point<T> Hright = getH(right);
-
-                    T HalphaRight = getAlpha(cur[0], right[0]);
-                    Point<T> H = (Hright + Hcur - (right[0] - cur[0]) * HalphaRight)* koeffZ;
-                    if(k == 0) {
-                        bufLayer[i][j][k+1][0]+=H;
-                    } else if(k == nz - 2) {
-                        bufLayer[i][j][k][0]-=H;
-                    } else {
-                        bufLayer[i][j][k+1][0]+=H;
-                        bufLayer[i][j][k][0]-=H;
-                    }
+        for (int j = 0; j < ny; j++) {
+            for (int i = 0; i < nx; i++) {
+                for (int k = 0; k < nz; k++) {
+                    solveZDirection(curLayer, bufLayer, i, j, k, nz, paramCount, koeffZ);
                 }
             }
         }
 
-        for(int i = 1; i < nx -1; i++) {
-            for(int j = 1; j < ny - 1; j++) {
-                for(int k = 1; k < nz - 1; k++) {
+        for(int i = 0; i < nx; i++) {
+            for(int j = 0; j < ny; j++) {
+                for(int k = 0; k < nz; k++) {
                     T ro = bufLayer[i][j][k][0][0];
                     T roU = bufLayer[i][j][k][0][1];
                     T roV = bufLayer[i][j][k][0][2];
@@ -570,6 +726,130 @@ Cell<Point<T>>*** gasDynamic(Cell<Point<T>>*** cells,
                 }
             }
         }
+
+        if(time % printFileCount == 0) {
+            std::cout<<t0 + time * tau<<" print to file"<<fileCount<<std::endl;
+            T*** convertedArray = convertRoToArray(curLayer, nx, ny, nz);
+            VTSFormateer(convertedArray, nx, ny, nz, x0, x1, y0, y1, z0, z1, 6, 4, filePrefix + std::to_string(fileCount) + ".vts");
+            delete3DArray(convertedArray, nx, ny);
+            fileCount++;
+        }
+
+//        // F
+//        for (int i = 0; i < nx - 1; i++) {
+//            for (int j = 1; j < ny - 1; j++) {
+//                for (int k = 1; k < nz - 1; k++) {
+//
+//                    Cell<Point<T>> cur = curLayer[i][j][k];
+//                    Cell<Point<T>> right;
+//
+//                    if(curLayer[i+1][j][k].getType() == 2) {
+//                        right = getWall(cur, 1);
+//                    } else {
+//                        right = curLayer[i+1][j][k];
+//                    }
+//
+//                    if(cur.getType() == 2) {
+//                        cur = getWall(right, 0);
+//                    }
+//
+//                    Point<T> Fcur = getF(cur);
+//                    Point<T> Fright = getF(right);
+//
+//                    T FalphaRight = getAlpha(cur[0], right[0]);
+//                    Point<T> F = (Fright + Fcur - (right[0] - cur[0]) * FalphaRight)* koeffX;
+//                    if(i == 0) {
+//                        bufLayer[i+1][j][k][0]+=F;
+//                    } else if(i == nx-2) {
+//                        bufLayer[i][j][k][0]-=F;
+//                    } else {
+//                        bufLayer[i+1][j][k][0]+=F;
+//                        bufLayer[i][j][k][0]-=F;
+//                    }
+//                }
+//            }
+//        }
+//
+//        // G
+//
+//        for (int j = 0; j < ny - 1; j++) {
+//            for (int i = 1; i < nx - 1; i++) {
+//                for (int k = 1; k < nz - 1; k++) {
+//
+//                    Cell<Point<T>> cur = curLayer[i][j][k];
+//                    Cell<Point<T>> right;
+//                    if(curLayer[i][j+1][k].getType() == 2) {
+//                        right = getWall(cur, 3);
+//                    } else {
+//                        right = curLayer[i][j+1][k];
+//                    }
+//
+//                    if(cur.getType() == 2) {
+//                        cur = getWall(right, 2);
+//                    }
+//
+//                    Point<T> Gcur = getG(cur);
+//                    Point<T> Gright = getG(right);
+//
+//                    T GalphaRight = getAlpha(cur[0], right[0]);
+//                    Point<T> G = (Gright + Gcur - (right[0] - cur[0]) * GalphaRight)* koeffY;
+//                    if(j == 0) {
+//                        bufLayer[i][j+1][k][0]+=G;
+//                    } else if(j == ny - 2) {
+//                        bufLayer[i][j][k][0]-=G;
+//                    } else {
+//                        bufLayer[i][j+1][k][0]+=G;
+//                        bufLayer[i][j][k][0]-=G;
+//                    }
+//                }
+//            }
+//        }
+//
+//        // H
+//
+//        for (int k = 0; k < nz - 1; k++) {
+//            for (int j = 1; j < ny - 1; j++) {
+//                for (int i = 1; i < nx - 1; i++) {
+//                    Cell<Point<T>> cur = curLayer[i][j][k];
+//                    Cell<Point<T>> right;
+//                    if(curLayer[i][j][k+1].getType() == 2) {
+//                        right = getWall(cur, 5);
+//                    } else {
+//                        right = curLayer[i][j][k+1];
+//                    }
+//
+//                    if(cur.getType() == 2) {
+//                        cur = getWall(right, 4);
+//                    }
+//                    Point<T> Hcur = getH(cur);
+//                    Point<T> Hright = getH(right);
+//
+//                    T HalphaRight = getAlpha(cur[0], right[0]);
+//                    Point<T> H = (Hright + Hcur - (right[0] - cur[0]) * HalphaRight)* koeffZ;
+//                    if(k == 0) {
+//                        bufLayer[i][j][k+1][0]+=H;
+//                    } else if(k == nz - 2) {
+//                        bufLayer[i][j][k][0]-=H;
+//                    } else {
+//                        bufLayer[i][j][k+1][0]+=H;
+//                        bufLayer[i][j][k][0]-=H;
+//                    }
+//                }
+//            }
+//        }
+//
+//        for(int i = 1; i < nx - 1; i++) {
+//            for(int j = 1; j < ny - 1; j++) {
+//                for(int k = 1; k < nz - 1; k++) {
+//                    T ro = bufLayer[i][j][k][0][0];
+//                    T roU = bufLayer[i][j][k][0][1];
+//                    T roV = bufLayer[i][j][k][0][2];
+//                    T roW = bufLayer[i][j][k][0][3];
+//                    T roE = bufLayer[i][j][k][0][4];
+//                    bufLayer[i][j][k][0][5] = (roE - (pow(roU, 2) + pow(roV, 2) + pow(roW,2)) /(2*ro))*(0.4);
+//                }
+//            }
+//        }
         delete3DArray(curLayer, nx, ny);
         curLayer = copyArray(bufLayer, nx, ny, nz);
     }

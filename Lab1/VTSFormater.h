@@ -34,10 +34,10 @@ void VTSFormateer(
     file<<"<Points>"<<std::endl;
     file<<"<DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">"<<std::endl;
 
-    for(int i = 0; i < nx; i++) {
+    for(int k = 0; k < nz; k++) {
         for(int j = 0; j < ny; j++) {
-            for(int k = 0; k < nz; k++) {
-                file<<i<<" "<<j<<" "<<k<<" ";
+            for(int i = 0; i < nx; i++) {
+                file<<x0 + i*hx<<" "<<y0 + j*hy<<" "<<z0 + k*hz<<" ";
             }
             file<<std::endl;
         }
@@ -49,9 +49,9 @@ void VTSFormateer(
     file<<"<PointData>"<<std::endl;
 
     file<<"<DataArray type=\"Float64\" Name=\"Temperature\" format=\"ascii\">"<<std::endl;
-    for(int i = 0; i < nx; i++) {
+    for(int k = 0; k < nz; k++) {
         for(int j = 0; j < ny; j++) {
-            for(int k = 0; k < nz; k++) {
+            for(int i = 0; i < nx; i++) {
                 file<<std::fixed<<std::setw(numberCount)<<std::setprecision(precision)<<arr[i][j][k]<<" ";
             }
             file<<std::endl;

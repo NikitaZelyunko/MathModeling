@@ -59,6 +59,7 @@ public:
 
     Cell(const Cell<T>& x): Point<T>(x) {
         this->type = x.type;
+        this->neighbors = x.neighbors;
     }
 
     void setType(int type) {
@@ -89,47 +90,47 @@ public:
         return isIn() || isOut() || isWall();
     }
 
-    inline Cell<T>& operator =(const Point<T>& x) {
-        if(this->isInner()) {
-            Point<T>::operator=(x);
-        }
+    inline Cell<T>& operator =(const Cell<T>& x) {
+        Point<T>::operator=(x);
+        this->type = x.type;
+        this->neighbors = x.neighbors;
         return (*this);
     }
-
-    inline const Cell<T> operator =(const T& scalar) const {
-        if(this->isInner()) {
-            Point<T>::operator=(scalar);
-        }
-        return (*this);
-    }
-
-    inline Cell<T>& operator *=(const T& scalar) {
-        if(this->isInner()) {
-            Point<T>::operator*=(scalar);
-        }
-        return (*this);
-    }
-
-    inline const Cell<T> operator /=(const T& scalar) {
-        if(this->isInner()) {
-            Point<T>::operator/=(scalar);
-        }
-        return (*this);
-    }
-
-    inline Cell<T>& operator +=(const Point<T>& x) {
-        if(this->isInner()) {
-            Point<T>::operator+=(x);
-        }
-        return (*this);
-    }
-
-    inline const Cell<T> operator -=(const Point<T>& x) {
-        if(this->isInner()) {
-            Point<T>::operator-=(x);
-        }
-        return (*this);
-    }
+//
+//    inline const Cell<T> operator =(const T& scalar) const {
+//        if(this->isInner()) {
+//            Point<T>::operator=(scalar);
+//        }
+//        return (*this);
+//    }
+//
+//    inline Cell<T>& operator *=(const T& scalar) {
+//        if(this->isInner()) {
+//            Point<T>::operator*=(scalar);
+//        }
+//        return (*this);
+//    }
+//
+//    inline const Cell<T> operator /=(const T& scalar) {
+//        if(this->isInner()) {
+//            Point<T>::operator/=(scalar);
+//        }
+//        return (*this);
+//    }
+//
+//    inline Cell<T>& operator +=(const Point<T>& x) {
+//        if(this->isInner()) {
+//            Point<T>::operator+=(x);
+//        }
+//        return (*this);
+//    }
+//
+//    inline const Cell<T> operator -=(const Point<T>& x) {
+//        if(this->isInner()) {
+//            Point<T>::operator-=(x);
+//        }
+//        return (*this);
+//    }
 
     void addNeighbor(Cell<T>* neighbor) {
         this->neighbors.push_back(neighbor);
